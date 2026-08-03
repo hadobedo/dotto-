@@ -35,42 +35,18 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
 // (PSListController's footerViewClass plist hook does not fire on iOS 17).
 // The respring note renders directly beneath the Opacity rows with standard
 // footer styling, then the compact credits block follows with no dead space.
-- (UIView *)combinedCreditsFooter {
-    static UIView *combinedFooter = nil;
+- (DottoPlusPlusCreditsFooterView *)combinedCreditsFooter {
+    static DottoPlusPlusCreditsFooterView *credits = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        UILabel *note = [[UILabel alloc] init];
-        note.text = @"A respring is recommended after disabling.";
-        note.font = [UIFont systemFontOfSize:13];
-        note.textColor = [UIColor secondaryLabelColor];
-        note.textAlignment = NSTextAlignmentCenter;
-        note.numberOfLines = 0;
-        note.translatesAutoresizingMaskIntoConstraints = NO;
-
-        UIView *credits = (UIView *)[[DottoPlusPlusCreditsFooterView alloc] initWithSpecifier:nil];
-        credits.translatesAutoresizingMaskIntoConstraints = NO;
-
-        UIView *container = [[UIView alloc] init];
-        [container addSubview:note];
-        [container addSubview:credits];
-        [NSLayoutConstraint activateConstraints:@[
-            [note.topAnchor constraintEqualToAnchor:container.topAnchor],
-            [note.leadingAnchor constraintEqualToAnchor:container.leadingAnchor constant:16],
-            [note.trailingAnchor constraintEqualToAnchor:container.trailingAnchor constant:-16],
-            [credits.topAnchor constraintEqualToAnchor:note.bottomAnchor constant:8],
-            [credits.leadingAnchor constraintEqualToAnchor:container.leadingAnchor],
-            [credits.trailingAnchor constraintEqualToAnchor:container.trailingAnchor],
-            [credits.bottomAnchor constraintEqualToAnchor:container.bottomAnchor],
-        ]];
-        combinedFooter = container;
+        credits = (DottoPlusPlusCreditsFooterView *)[[DottoPlusPlusCreditsFooterView alloc] initWithSpecifier:nil];
     });
-    return combinedFooter;
+    return credits;
 }
 
 // Credits footer: rendered through the table delegate for the last section
 // (PSListController's footerViewClass plist hook does not fire on iOS 17).
-// The respring note renders directly beneath the Opacity rows with standard
-// footer styling, then the compact credits block follows with no dead space.
+// The respring note lives at the top of the page as the first group's footer.
 - (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
     if (section == tableView.numberOfSections - 1) {
         return [self combinedCreditsFooter];
@@ -83,10 +59,7 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
 
 - (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
     if (section == tableView.numberOfSections - 1) {
-        CGSize fit = [[self combinedCreditsFooter]
-                      systemLayoutSizeFittingSize:CGSizeMake(CGRectGetWidth(tableView.bounds),
-                                                             UILayoutFittingCompressedSize.height)];
-        return fit.height;
+        return [[self combinedCreditsFooter] preferredHeightForWidth:CGRectGetWidth(tableView.bounds)];
     }
     if ([super respondsToSelector:@selector(tableView:heightForFooterInSection:)]) {
         return [super tableView:tableView heightForFooterInSection:section];

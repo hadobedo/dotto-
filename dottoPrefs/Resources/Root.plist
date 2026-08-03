@@ -4,6 +4,14 @@
 <dict>
 	<key>items</key>
 	<array>
+	<dict>
+		<key>cell</key>
+		<string>PSGroupCell</string>
+		<key>footerText</key>
+		<string>A respring is recommended after disabling dotto++</string>
+		<key>footerAlignment</key>
+		<integer>1</integer>
+	</dict>
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
@@ -86,10 +94,6 @@
 			<string>PSGroupCell</string>
 			<key>label</key>
 			<string>Opacity</string>
-			<key>footerText</key>
-			<string>A respring is recommended after disabling</string>
-			<key>footerAlignment</key>
-			<integer>1</integer>
 		</dict>
 		<dict>
 			<key>cell</key>
