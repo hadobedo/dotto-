@@ -133,8 +133,8 @@ jobs:
             local directory=$1
             local architectures=$2
             local codename=$3
-            local package_file="$directory/Packages"
-            local compressed_file="$directory/Packages.gz"
+            local package_file=Packages
+            local compressed_file=Packages.gz
 
             (
               cd "$directory"
