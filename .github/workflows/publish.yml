@@ -161,9 +161,13 @@ jobs:
                 printf 'Components: main\n'
                 printf 'Description: dotto++ package feed\n'
                 printf 'MD5Sum:\n'
-                md5sum "$package_file" "$compressed_file" | awk '{ printf " %s %s %s\n", $1, "0", $2 }'
+                while read -r hash file; do
+                  printf ' %s %s %s\n' "$hash" "$(stat -c '%s' "$file")" "$file"
+                done < <(md5sum "$package_file" "$compressed_file")
                 printf 'SHA256:\n'
-                sha256sum "$package_file" "$compressed_file" | awk '{ printf " %s %s %s\n", $1, "0", $2 }'
+                while read -r hash file; do
+                  printf ' %s %s %s\n' "$hash" "$(stat -c '%s' "$file")" "$file"
+                done < <(sha256sum "$package_file" "$compressed_file")
               } > Release
             )
           }
