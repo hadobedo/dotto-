@@ -9,7 +9,8 @@
                      reuseIdentifier:reuseIdentifier
                            specifier:specifier])) {
         // Icon comes from the specifier's PSIconImageKey (native path).
-        self.imageView.tintColor = [UIColor labelColor];
+        // Blue signals tappability, matching the link row.
+        self.imageView.tintColor = [UIColor systemBlueColor];
         self.imageView.contentMode = UIViewContentModeScaleAspectFit;
         self.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     }

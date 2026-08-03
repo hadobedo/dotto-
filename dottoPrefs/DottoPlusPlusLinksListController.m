@@ -19,21 +19,21 @@ static NSString *const DottoYouTubeURL = @"https://www.youtube.com/@NicksWorks";
         _specifiers = [NSMutableArray array];
         [_specifiers addObject:[self linkSpecifier:@"Source on GitHub"
                                                key:@"kSource"
-                                              icon:@"chevron.left.forwardslash.chevron.right"]];
+                                              icon:[self brandIconNamed:@"icon_github"]]];
         [_specifiers addObject:[self linkSpecifier:@"X (Twitter)"
                                                key:@"kTwitter"
-                                              icon:@"at"]];
+                                              icon:[self brandIconNamed:@"icon_x"]]];
         [_specifiers addObject:[self linkSpecifier:@"Instagram"
                                                key:@"kInstagram"
-                                              icon:@"camera"]];
+                                              icon:[self brandIconNamed:@"icon_instagram"]]];
         [_specifiers addObject:[self linkSpecifier:@"YouTube"
                                                key:@"kYouTube"
-                                              icon:@"play.rectangle"]];
+                                              icon:[self brandIconNamed:@"icon_youtube"]]];
     }
     return _specifiers;
 }
 
-- (PSSpecifier *)linkSpecifier:(NSString *)name key:(NSString *)key icon:(NSString *)symbolName {
+- (PSSpecifier *)linkSpecifier:(NSString *)name key:(NSString *)key icon:(UIImage *)icon {
     PSSpecifier *specifier = [PSSpecifier preferenceSpecifierNamed:name
                                                             target:self
                                                                set:NULL
@@ -42,14 +42,28 @@ static NSString *const DottoYouTubeURL = @"https://www.youtube.com/@NicksWorks";
                                                               cell:PSLinkCell
                                                               edit:nil];
     [specifier setProperty:key forKey:@"key"];
-    if (symbolName) {
-        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20
-                                                                                            weight:UIImageSymbolWeightRegular];
-        UIImage *icon = [[UIImage systemImageNamed:symbolName withConfiguration:config]
-                         imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    if (icon) {
         [specifier setProperty:icon forKey:PSIconImageKey];
     }
     return specifier;
+}
+
+// Simple Icons brand marks (MIT) bundled as black-alpha PNGs; re-render them
+// in system blue so they read as tappable links in both appearances.
+- (UIImage *)brandIconNamed:(NSString *)name {
+    UIImage *image = [UIImage imageNamed:name
+                                 inBundle:[NSBundle bundleForClass:[self class]]
+            compatibleWithTraitCollection:nil];
+    if (!image) {
+        return nil;
+    }
+    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:image.size];
+    return [renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {
+        [image drawAtPoint:CGPointZero];
+        CGContextSetBlendMode(context.CGContext, kCGBlendModeSourceIn);
+        [[UIColor systemBlueColor] setFill];
+        CGContextFillRect(context.CGContext, CGRectMake(0, 0, image.size.width, image.size.height));
+    }];
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
