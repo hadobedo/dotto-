@@ -43,7 +43,7 @@ if [[ $package_version != "$repository_version" ]]; then
 fi
 
 grep -Fx 'Package: me.conorthedev.dotto+' "$package_control"
-grep -Fx 'Architecture: iphoneos-arm64e' "$package_control"
+grep -Fx 'Architecture: iphoneos-arm64' "$package_control"
 grep -F 'Depends: firmware (>= 17.0), ellekit, preferenceloader' "$package_control"
 
 printf 'package metadata verified: %s (Version: %s)\n' \

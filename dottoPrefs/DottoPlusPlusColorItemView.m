@@ -2,7 +2,7 @@
 
 #import "DottoPlusPlusColorRowStackView.h"
 
-#import <roothide.h>
+#import <rootless.h>
 #import <UIKit/UIColorPickerViewController.h>
 #import <math.h>
 
@@ -74,7 +74,7 @@ static UIColor *DottoPlusPlusColorFromHexString(NSString *hexString) {
         } else {
             // Custom color picker swatch.
             UIImageView *imageView = [[UIImageView alloc]
-                                      initWithImage:[UIImage imageWithContentsOfFile:jbroot(kColourPickerImagePath)]];
+                                      initWithImage:[UIImage imageWithContentsOfFile:ROOT_PATH_NS(kColourPickerImagePath)]];
             [imageView setFrame:CGRectMake(0, 0, 30, 30)];
             [imageView setContentMode:UIViewContentModeScaleAspectFit];
             [self addSubview:imageView];

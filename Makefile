@@ -1,7 +1,9 @@
 TARGET := iphone:clang:latest:17.0
-ARCHS := arm64e
+# Scheme defaults to roothide (Dopamine/rootHide); build legacy rootless with
+#   make clean package THEOS_PACKAGE_SCHEME=rootless ARCHS="arm64 arm64e"
+THEOS_PACKAGE_SCHEME ?= roothide
+ARCHS ?= arm64e
 INSTALL_TARGET_PROCESSES = SpringBoard
-THEOS_PACKAGE_SCHEME = roothide
 
 ifeq ($(shell uname -s),Darwin)
 TARGET_CODESIGN = /usr/bin/codesign
@@ -23,7 +25,7 @@ DOTTO_LIB_LDFLAGS = -L$(THEOS_OBJ_DIR)
 # SpringBoard badge tweak.
 TWEAK_NAME = dotto
 dotto_FILES = Tweak.x
-dotto_CFLAGS = -fobjc-arc -Wall -Wextra -Werror -Ilibdottoplus
+dotto_CFLAGS = -fobjc-arc -Wall -Wextra -Werror -Ilibdottoplus -DDISABLE_ROOTLESS_COMPAT_WARNING
 dotto_FRAMEWORKS = UIKit Foundation CoreGraphics
 dotto_LIBRARIES = dottoplus
 # Categories on SpringBoard classes reference their class symbols; resolve at
@@ -41,7 +43,7 @@ dottoPrefs_FILES = dottoPrefs/DottoPlusPlusRootListController.m \
 dottoPrefs_INSTALL_PATH = /Library/PreferenceBundles
 # Bundle resources (Info.plist, Root.plist, images) live in dottoPrefs/Resources.
 dottoPrefs_RESOURCE_DIRS = dottoPrefs/Resources
-dottoPrefs_CFLAGS = -fobjc-arc -Wall -Wextra -Werror -Ilibdottoplus
+dottoPrefs_CFLAGS = -fobjc-arc -Wall -Wextra -Werror -Ilibdottoplus -DDISABLE_ROOTLESS_COMPAT_WARNING
 dottoPrefs_FRAMEWORKS = UIKit Foundation
 dottoPrefs_PRIVATE_FRAMEWORKS = Preferences
 dottoPrefs_LIBRARIES = dottoplus

@@ -11,6 +11,14 @@ permissions:
 jobs:
   build-and-package:
     runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - scheme: roothide
+            archs: "arm64 arm64e"
+          - scheme: rootless
+            archs: "arm64 arm64e"
     env:
       ROOTHIDE_THEOS_COMMIT: 88506b2c22e9e07dd4ed055f23c9e398a117a2c7
     steps:
@@ -41,8 +49,8 @@ jobs:
           git -C "$THEOS" submodule update --init --recursive
           test "$(git -C "$THEOS" rev-parse HEAD)" = "$ROOTHIDE_THEOS_COMMIT"
 
-      - name: Build RootHide debug package
-        run: make clean package PACKAGE_VERSION="${{ steps.package-version.outputs.version }}"
+      - name: Build debug package (${{ matrix.scheme }})
+        run: make clean package THEOS_PACKAGE_SCHEME=${{ matrix.scheme }} ARCHS="${{ matrix.archs }}" PACKAGE_VERSION="${{ steps.package-version.outputs.version }}"
 
       - name: Verify package metadata
         run: scripts/verify_package.sh
@@ -56,7 +64,7 @@ jobs:
       - name: Upload debug artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: dotto-ios17-${{ steps.package-version.outputs.version }}-roothide-debug
+          name: dotto-${{ matrix.scheme }}-${{ steps.package-version.outputs.version }}-debug
           path: |
             packages/*.deb
             packages/SHA256SUMS

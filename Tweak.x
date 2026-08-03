@@ -9,7 +9,7 @@
 #import "DottoPlusPlusPrivate.h"
 
 #import <objc/runtime.h>
-#import <roothide.h>
+#import <rootless.h>
 
 #import "DottoPlusPlusPreferences.h"
 #import "UIColor+dottoPlusPlus.h"
@@ -359,8 +359,8 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon, UIVie
         return;
     }
 
-    NSString *path = jbroot([dppPrefs appearanceStyle] != 0 ? DottoCircleBadgePath
-                                                               : DottoNormalBadgePath);
+    NSString *path = ROOT_PATH_NS([dppPrefs appearanceStyle] != 0 ? DottoCircleBadgePath
+                                                                 : DottoNormalBadgePath);
     NSDictionary *badgeArt = DottoPlusPlusBadgeArt(path);
     UIImage *badgeImage = [badgeArt[@"image"]
                            imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
