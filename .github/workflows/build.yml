@@ -68,7 +68,7 @@ jobs:
       - name: Upload debug artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: dotto-${{ matrix.scheme }}-${{ steps.package-version.outputs.version }}-debug
+          name: dottoplusplus-${{ matrix.scheme }}-${{ steps.package-version.outputs.version }}-debug
           path: |
             packages/*.deb
             packages/SHA256SUMS

@@ -25,17 +25,17 @@ static NSMutableDictionary<NSString *, UIColor *> *dppColourCache;
 // Re-assert dotto once per pass on the next runloop turn to have the last word.
 static BOOL dppReapplyScheduled;
 
-static NSString *const DottoReloadNotification = @"me.conorthedev.dotto/ReloadPrefs";
+static NSString *const DottoReloadNotification = @"com.nicksworks.dottoplusplus/ReloadPrefs";
 static NSString *const DottoNormalBadgePath =
-    @"/Library/Application Support/dotto/badges/normal/SBBadgeBG@3x.png";
+    @"/Library/Application Support/dottoplusplus/badges/normal/SBBadgeBG@3x.png";
 static NSString *const DottoCircleBadgePath =
-    @"/Library/Application Support/dotto/badges/circle/SBBadgeBG@3x.png";
+    @"/Library/Application Support/dottoplusplus/badges/circle/SBBadgeBG@3x.png";
 
 #pragma mark - Diagnostics (temporary, gated by DottoDebug prefs key)
 
 // Debug builds log by default; set me.conorthedev.dotto.prefs DottoDebug=NO to silence.
 static BOOL DottoPlusPlusDebugEnabled(void) {
-    NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:@"me.conorthedev.dotto.prefs"];
+    NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:@"com.nicksworks.dottoplusplus.prefs"];
     return [defaults boolForKey:@"DottoDebug"];
 }
 

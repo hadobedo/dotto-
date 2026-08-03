@@ -39,9 +39,9 @@
                 </dict>
             </array>
             <key>defaults</key>
-			<string>me.conorthedev.dotto.prefs</string>
+			<string>com.nicksworks.dottoplusplus.prefs</string>
             <key>PostNotification</key>
-			<string>me.conorthedev.dotto/ReloadPrefs</string>
+			<string>com.nicksworks.dottoplusplus/ReloadPrefs</string>
             <key>key</key>
             <string>kAppearanceStyle</string>
             <key>height</key>
@@ -67,13 +67,13 @@
 			<key>default</key>
 			<true/>
 			<key>defaults</key>
-			<string>me.conorthedev.dotto.prefs</string>
+			<string>com.nicksworks.dottoplusplus.prefs</string>
 			<key>key</key>
 			<string>kAdaptiveColor</string>
 			<key>label</key>
 			<string>Adaptive Colour</string>
 			<key>PostNotification</key>
-			<string>me.conorthedev.dotto/ReloadPrefs</string>
+			<string>com.nicksworks.dottoplusplus/ReloadPrefs</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -81,13 +81,13 @@
 			<key>default</key>
 			<false/>
 			<key>defaults</key>
-			<string>me.conorthedev.dotto.prefs</string>
+			<string>com.nicksworks.dottoplusplus.prefs</string>
 			<key>key</key>
 			<string>kUsePastelColor</string>
 			<key>label</key>
 			<string>Use Pastel Colours</string>
 			<key>PostNotification</key>
-			<string>me.conorthedev.dotto/ReloadPrefs</string>
+			<string>com.nicksworks.dottoplusplus/ReloadPrefs</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -99,7 +99,7 @@
 			<key>cell</key>
 			<string>PSSliderCell</string>
 			<key>defaults</key>
-			<string>me.conorthedev.dotto.prefs</string>
+			<string>com.nicksworks.dottoplusplus.prefs</string>
 			<key>key</key>
 			<string>kTransparency</string>
 			<key>default</key>
@@ -111,7 +111,7 @@
 			<key>max</key>
 			<integer>100</integer>
 			<key>PostNotification</key>
-			<string>me.conorthedev.dotto/ReloadPrefs</string>
+			<string>com.nicksworks.dottoplusplus/ReloadPrefs</string>
 		</dict>
 		<dict>
 			<key>cell</key>

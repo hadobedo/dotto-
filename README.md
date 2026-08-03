@@ -10,7 +10,7 @@ Summary:
   sources building for both **roothide (Dopamine/rootHide) and legacy
   rootless** via a CI matrix (`THEOS_PACKAGE_SCHEME` + `ROOT_PATH_NS` paths).
 - **Preferences** — `CFPreferences` replaced with an `NSUserDefaults` suite on
-  the same domain (`me.conorthedev.dotto.prefs`), so existing settings survive.
+  the same domain (`com.nicksworks.dottoplusplus.prefs`), so existing settings survive.
 - **Colour picker** — removed the `libcolorpicker` dependency; uses the native
   iOS 14+ `UIColorPickerViewController` with in-bundle hex normalisation.
 - **Appearance selector** — removed `libappearancecell`; rebuilt the same

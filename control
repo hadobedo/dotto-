@@ -1,4 +1,4 @@
-Package: me.conorthedev.dotto+
+Package: com.nicksworks.dottoplusplus
 Name: dotto++
 Version: 1.0.6+ios17.0
 Architecture: iphoneos-arm64
@@ -7,3 +7,5 @@ Maintainer: ConorTheDev <conorthedev@gmail.com>
 Author: ConorTheDev & Mirac
 Section: Tweaks
 Depends: firmware (<< 18.0), ellekit, preferenceloader
+Replaces: me.conorthedev.dotto+
+Conflicts: me.conorthedev.dotto+

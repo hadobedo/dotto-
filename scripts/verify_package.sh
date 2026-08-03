@@ -42,7 +42,7 @@ if [[ $package_version != "$repository_version" ]]; then
     exit 1
 fi
 
-grep -Fx 'Package: me.conorthedev.dotto+' "$package_control" \
+grep -Fx 'Package: com.nicksworks.dottoplusplus' "$package_control" \
     || { echo "Package mismatch:" >&2; grep '^Package:' "$package_control" >&2; exit 1; }
 EXPECTED_ARCH="${EXPECTED_ARCH:-iphoneos-arm64e}"
 grep -Fx "Architecture: $EXPECTED_ARCH" "$package_control" \

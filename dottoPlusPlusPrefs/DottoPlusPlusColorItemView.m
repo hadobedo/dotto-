@@ -8,7 +8,7 @@
 
 static NSString *const kSelectedColor = @"kSelectedColor";
 static NSString *const kColourPickerImagePath =
-    @"/Library/PreferenceBundles/dottoPrefs.bundle/colourpicker.png";
+    @"/Library/PreferenceBundles/dottoPlusPlusPrefs.bundle/colourpicker.png";
 
 // Native replacement for libcolorpicker's hexFromColor:/LCPParseColorString:
 // round-trips a color through #RRGGBB so dynamic/system colors become concrete.

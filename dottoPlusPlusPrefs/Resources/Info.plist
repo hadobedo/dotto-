@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>dottoPrefs</string>
 	<key>CFBundleIdentifier</key>
-	<string>me.conorthedev.dotto.prefs</string>
+	<string>com.nicksworks.dottoplusplus.prefs</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>

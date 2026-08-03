@@ -1,7 +1,7 @@
 #import "DottoPlusPlusPreferences.h"
 
-static NSString *const DottoPrefsSuite = @"me.conorthedev.dotto.prefs";
-static NSString *const DottoReloadNotification = @"me.conorthedev.dotto/ReloadPrefs";
+static NSString *const DottoPrefsSuite = @"com.nicksworks.dottoplusplus.prefs";
+static NSString *const DottoReloadNotification = @"com.nicksworks.dottoplusplus/ReloadPrefs";
 
 static NSString *const kEnabled = @"kEnabled";
 static NSString *const kAppearanceStyle = @"kAppearanceStyle";
