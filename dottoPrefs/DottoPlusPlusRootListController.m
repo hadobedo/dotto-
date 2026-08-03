@@ -24,6 +24,17 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
     return self;
 }
 
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    PSSpecifier *specifier = [self specifierAtIndexPath:indexPath];
+    if ([[specifier propertyForKey:@"key"] isEqualToString:@"kOriginalLink"]) {
+        [tableView deselectRowAtIndexPath:indexPath animated:YES];
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://repo.dynastic.co/dotto"]
+                                           options:@{} completionHandler:nil];
+        return;
+    }
+    [super tableView:tableView didSelectRowAtIndexPath:indexPath];
+}
+
 - (NSArray *)specifiers {
     if (!_specifiers) {
         _specifiers = [self loadSpecifiersFromPlistName:@"Root" target:self];
@@ -35,39 +46,6 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
 // (PSListController's footerViewClass plist hook does not fire on iOS 17).
 // The respring note renders directly beneath the Opacity rows with standard
 // footer styling, then the compact credits block follows with no dead space.
-- (DottoPlusPlusCreditsFooterView *)combinedCreditsFooter {
-    static DottoPlusPlusCreditsFooterView *credits = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        credits = (DottoPlusPlusCreditsFooterView *)[[DottoPlusPlusCreditsFooterView alloc] initWithSpecifier:nil];
-    });
-    return credits;
-}
-
-// Credits footer: rendered through the table delegate for the last section
-// (PSListController's footerViewClass plist hook does not fire on iOS 17).
-// The respring note lives at the top of the page as the first group's footer.
-- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
-    if (section == tableView.numberOfSections - 1) {
-        DottoPlusPlusCreditsFooterView *footer = [self combinedCreditsFooter];
-        [footer setCardInset:tableView.layoutMargins.left];
-        return footer;
-    }
-    if ([super respondsToSelector:@selector(tableView:viewForFooterInSection:)]) {
-        return [super tableView:tableView viewForFooterInSection:section];
-    }
-    return nil;
-}
-
-- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
-    if (section == tableView.numberOfSections - 1) {
-        return [[self combinedCreditsFooter] preferredHeightForWidth:CGRectGetWidth(tableView.bounds)];
-    }
-    if ([super respondsToSelector:@selector(tableView:heightForFooterInSection:)]) {
-        return [super tableView:tableView heightForFooterInSection:section];
-    }
-    return UITableViewAutomaticDimension;
-}
 
 - (void)switchToggled:(UISwitch *)sender {
     [self.preferences writeValue:@([sender isOn]) forKey:kEnabled];

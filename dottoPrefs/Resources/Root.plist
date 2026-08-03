@@ -113,6 +113,32 @@
 			<key>PostNotification</key>
 			<string>me.conorthedev.dotto/ReloadPrefs</string>
 		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>About &amp; Links</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>detail</key>
+			<string>DottoPlusPlusLinksListController</string>
+			<key>label</key>
+			<string>By: Nick's Works</string>
+			<key>key</key>
+			<string>kByRow</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSubtitleCell</string>
+			<key>label</key>
+			<string>Original tweak (dotto+)</string>
+			<key>subtitle</key>
+			<string>by Mirac &amp; ConorTheDev</string>
+			<key>key</key>
+			<string>kOriginalLink</string>
+		</dict>
 	</array>
 	<key>title</key>
 	<string>dotto++</string>
