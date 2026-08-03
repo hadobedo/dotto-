@@ -38,26 +38,8 @@ static BOOL DottoDebugEnabled(void) {
     return [defaults boolForKey:@"DottoDebug"];
 }
 
-// Also append to a file readable over SSH (unified log is not reachable from
-// the jailbreak shell).
-static void DottoDebugAppend(NSString *message) {
-    NSString *path = @"/var/mobile/dotto_debug.log";
-    NSFileManager *fm = [NSFileManager defaultManager];
-    if (![fm fileExistsAtPath:path]) {
-        [@"" writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL];
-    }
-    NSFileHandle *fh = [NSFileHandle fileHandleForWritingAtPath:path];
-    if (fh) {
-        [fh seekToEndOfFile];
-        [fh writeData:[message dataUsingEncoding:NSUTF8StringEncoding]];
-        [fh closeFile];
-    }
-}
-
 #define DOTTOLOG(...) do { if (DottoDebugEnabled()) { \
-    NSString *_m = [NSString stringWithFormat:@"[dotto+] " __VA_ARGS__]; \
-    NSLog(@"%@", _m); \
-    DottoDebugAppend([_m stringByAppendingString:@"\n"]); \
+    NSLog(@"[dotto+] " __VA_ARGS__); \
 } } while (0)
 
 #pragma mark - Badge art
@@ -167,6 +149,7 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
         for (SBIconBadgeView *badgeView in dottoBadgeViews) {
             [badgeView applyDotto];
         }
+        DottoScheduleReapply();
     }
 }
 
@@ -241,46 +224,43 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
     UIImageView *textView = [self valueForKey:@"textView"];
 
     if (DottoDebugEnabled()) {
-        NSMutableArray<NSString *> *ivarNames = [NSMutableArray array];
-        unsigned int ivarCount = 0;
-        Ivar *ivars = class_copyIvarList([self class], &ivarCount);
-        for (unsigned int i = 0; i < ivarCount; i++) {
-            [ivarNames addObject:[NSString stringWithUTF8String:ivar_getName(ivars[i])]];
+        static NSMutableSet *dumpedBadges = nil;
+        if (!dumpedBadges) {
+            dumpedBadges = [NSMutableSet set];
         }
-        free(ivars);
-        NSMutableArray<NSString *> *subviews = [NSMutableArray array];
-        for (UIView *subview in self.subviews) {
-            [subviews addObject:[NSString stringWithFormat:@"%@(%@)", NSStringFromClass([subview class]),
-                                 NSStringFromCGRect(subview.frame)]];
+        BOOL firstDump = ![dumpedBadges containsObject:@((uintptr_t)self)];
+        if (firstDump) {
+            [dumpedBadges addObject:@((uintptr_t)self)];
+            NSMutableArray<NSString *> *siblings = [NSMutableArray array];
+            for (UIView *sibling in self.superview.subviews) {
+                [siblings addObject:[NSString stringWithFormat:@"%@(%@)hidden=%d alpha=%.2f",
+                                     NSStringFromClass([sibling class]), NSStringFromCGRect(sibling.frame),
+                                     sibling.hidden, sibling.alpha]];
+            }
+            NSMutableArray<NSString *> *badgeSublayers = [NSMutableArray array];
+            for (CALayer *sublayer in self.layer.sublayers) {
+                [badgeSublayers addObject:[NSString stringWithFormat:@"%@ contents=%@ bg=%@",
+                                           NSStringFromClass([sublayer class]), sublayer.contents,
+                                           sublayer.backgroundColor]];
+            }
+            NSMutableArray<NSString *> *ancestors = [NSMutableArray array];
+            UIView *ancestor = self.superview;
+            while (ancestor && ancestors.count < 6) {
+                [ancestors addObject:[NSString stringWithFormat:@"%@(%@)", NSStringFromClass([ancestor class]),
+                                      NSStringFromCGRect(ancestor.frame)]];
+                ancestor = ancestor.superview;
+            }
+            DOTTOLOG(@"badge %p: subviews=[%@] siblings=[%@] sublayers=[%@] ancestors=[%@]",
+                     self,
+                     [[self.subviews valueForKey:@"description"] componentsJoinedByString:@","],
+                     [siblings componentsJoinedByString:@","],
+                     [badgeSublayers componentsJoinedByString:@","],
+                     [ancestors componentsJoinedByString:@","]);
         }
-        NSMutableArray<NSString *> *ancestors = [NSMutableArray array];
-        UIView *ancestor = self.superview;
-        while (ancestor && ancestors.count < 6) {
-            [ancestors addObject:[NSString stringWithFormat:@"%@(%@)", NSStringFromClass([ancestor class]),
-                                  NSStringFromCGRect(ancestor.frame)]];
-            ancestor = ancestor.superview;
-        }
-        // Siblings (the stock pill may be a sibling view of the badge).
-        NSMutableArray<NSString *> *siblings = [NSMutableArray array];
-        for (UIView *sibling in self.superview.subviews) {
-            [siblings addObject:[NSString stringWithFormat:@"%@(%@)hidden=%d alpha=%.2f",
-                                 NSStringFromClass([sibling class]), NSStringFromCGRect(sibling.frame),
-                                 sibling.hidden, sibling.alpha]];
-        }
-        NSMutableArray<NSString *> *badgeSublayers = [NSMutableArray array];
-        for (CALayer *sublayer in self.layer.sublayers) {
-            [badgeSublayers addObject:[NSString stringWithFormat:@"%@ contents=%@ bg=%@",
-                                       NSStringFromClass([sublayer class]), sublayer.contents,
-                                       sublayer.backgroundColor]];
-        }
-        DOTTOLOG(@"applyDotto self=%@ frame=%@ bounds=%@ ivars=[%@] subviews=[%@] siblings=[%@] badgeSublayers=[%@] ancestors=[%@] enabled=%d bg=%@ (%@ frame=%@ img=%@ tint=%@ alpha=%.2f) tv=%@ hidden=%d",
-                 self, NSStringFromCGRect(self.frame), NSStringFromCGRect(self.bounds),
-                 [ivarNames componentsJoinedByString:@","], [subviews componentsJoinedByString:@","],
-                 [siblings componentsJoinedByString:@","], [badgeSublayers componentsJoinedByString:@","],
-                 [ancestors componentsJoinedByString:@","],
-                 [dottoPrefs tweakEnabled], backgroundView, NSStringFromClass([backgroundView class]),
-                 NSStringFromCGRect([backgroundView frame]), [backgroundView image],
-                 [backgroundView tintColor], [backgroundView alpha], textView, [textView isHidden]);
+        DOTTOLOG(@"applyDotto %p frame=%@ art=%@ tint=%@ alpha=%.2f enabled=%d branch=%@",
+                 self, NSStringFromCGRect(self.frame), [backgroundView image],
+                 [backgroundView tintColor], [backgroundView alpha], [dottoPrefs tweakEnabled],
+                 ([self dottoIsIconFolder] || ![dottoPrefs adaptiveColorEnabled]) ? @"selected" : @"adaptive");
     }
 
     if (![dottoPrefs tweakEnabled]) {
@@ -326,14 +306,20 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
         artSize = CGSizeMake(26, 26);
     }
     [backgroundView setFrame:CGRectMake(0, 0, artSize.width, artSize.height)];
-    [backgroundView setCenter:CGPointMake(13, 13)];
+    // Original effective art position: canvas center (66.5, 27.5) of 95 -> 26pt
+    // badge view => (18.2, 7.5); places the dot hanging off the icon corner.
+    [backgroundView setCenter:CGPointMake(18.2, 7.5)];
     [backgroundView setAlpha:[dottoPrefs transparency]];
     [textView setHidden:YES];
-    DOTTOLOG(@"applyDotto DONE bg=%@ frame=%@ img=%@ tint=%@ alpha=%.2f colourBranch=%@",
-             backgroundView, NSStringFromCGRect([backgroundView frame]), [backgroundView image],
-             [backgroundView tintColor], [backgroundView alpha],
-             ([self dottoIsIconFolder] || ![dottoPrefs adaptiveColorEnabled]) ? @"selected" : @"adaptive");
-    DottoScheduleReapply();
+    // Hide any other badge-internal rendering (themed stock pill, incoming
+    // crossfade view, layer contents) so only our dot draws.
+    self.layer.contents = nil;
+    self.backgroundColor = [UIColor clearColor];
+    for (UIView *subview in self.subviews) {
+        if (subview != backgroundView) {
+            [subview setHidden:YES];
+        }
+    }
 }
 
 @end
@@ -363,6 +349,7 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
 - (void)_applyParallaxSettings {
     %orig;
     [self applyDotto];
+    DottoScheduleReapply();
 }
 
 - (CGRect)bounds {
@@ -428,6 +415,7 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
 - (void)layoutSubviews {
     %orig;
     [self applyDotto];
+    DottoScheduleReapply();
 }
 
 - (void)configureAnimatedForIcon:(id)icon infoProvider:(id)provider animator:(id)animator {
@@ -444,6 +432,7 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
     self.dottoApplicationIcon = icon;
     self.dottoInfoProvider = provider;
     [self applyDotto];
+    DottoScheduleReapply();
 }
 
 // iOS 17 accessory positioning protocol method (stock badges position themselves
