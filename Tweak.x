@@ -193,14 +193,11 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
                              OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-// Adaptive colour: folder icons, force-touch providers and providers without an
-// icon image fall back to the user-selected colour; otherwise the icon image's
-// dominant colour is used.
+// Adaptive colour: force-touch providers and providers without an icon image
+// fall back to the user-selected colour; otherwise the icon image's dominant
+// colour is used. Folders are included too (the original excluded them; the
+// folder icon image's dominant colour reads well as a badge).
 - (UIColor *)dottoBadgeColour {
-    if ([self.dottoApplicationIcon isKindOfClass:[SBFolderIcon class]]) {
-        DOTTOLOG(@"badgeColour: folder icon -> selected");
-        return [dottoPrefs dottoSelectedColour];
-    }
     if ([self.dottoInfoProvider isKindOfClass:[SBForceTouchAppIconInfoProvider class]]) {
         DOTTOLOG(@"badgeColour: force-touch provider -> selected");
         return [dottoPrefs dottoSelectedColour];
