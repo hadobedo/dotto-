@@ -49,7 +49,8 @@ static NSString *const DottoYouTubeURL = @"https://www.youtube.com/@NicksWorks";
 }
 
 // Simple Icons brand marks (MIT) bundled as black-alpha PNGs; re-render them
-// in system blue so they read as tappable links in both appearances.
+// at the standard 20pt settings-icon size in system blue so they read as
+// tappable links in both appearances and match the other row icons.
 - (UIImage *)brandIconNamed:(NSString *)name {
     UIImage *image = [UIImage imageNamed:name
                                  inBundle:[NSBundle bundleForClass:[self class]]
@@ -57,12 +58,18 @@ static NSString *const DottoYouTubeURL = @"https://www.youtube.com/@NicksWorks";
     if (!image) {
         return nil;
     }
-    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:image.size];
+    const CGFloat iconSize = 20.0;
+    UIGraphicsImageRendererFormat *format = [UIGraphicsImageRendererFormat defaultFormat];
+    format.scale = [UIScreen mainScreen].scale;
+    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc]
+                                         initWithSize:CGSizeMake(iconSize, iconSize)
+                                               format:format];
     return [renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {
-        [image drawAtPoint:CGPointZero];
+        CGRect rect = CGRectMake(0, 0, iconSize, iconSize);
+        [image drawInRect:rect];
         CGContextSetBlendMode(context.CGContext, kCGBlendModeSourceIn);
         [[UIColor systemBlueColor] setFill];
-        CGContextFillRect(context.CGContext, CGRectMake(0, 0, image.size.width, image.size.height));
+        CGContextFillRect(context.CGContext, rect);
     }];
 }
 
