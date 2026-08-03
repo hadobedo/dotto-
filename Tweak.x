@@ -195,9 +195,50 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
 
 // Adaptive colour: force-touch providers and providers without an icon image
 // fall back to the user-selected colour; otherwise the icon image's dominant
-// colour is used. Folders are included too (the original excluded them; the
-// folder icon image's dominant colour reads well as a badge).
+// colour is used. Folders average the dominant colours of the apps inside them
+// (their own contentsImage is nil on iOS 17).
+
+// Average the dominant colour of every app icon inside a folder.
+static UIColor *DottoAverageFolderColour(SBFolderIcon *folderIcon) {
+    struct SBIconImageInfo info;
+    info.size = CGSizeMake(60, 60);
+    info.scale = 3.0;
+    info.continuousCornerRadius = 20.45;
+    CGFloat red = 0, green = 0, blue = 0;
+    NSUInteger count = 0;
+    for (SBIconListModel *list in folderIcon.folder.lists) {
+        for (SBIcon *icon in list.icons) {
+            if ([icon isKindOfClass:[SBFolderIcon class]]) {
+                continue; // keep it simple: nested folders are skipped
+            }
+            UIImage *image = [icon iconImageWithInfo:info];
+            if (!image) {
+                continue;
+            }
+            UIColor *colour = [image dottoAverageColor];
+            CGFloat r, g, b, a;
+            if ([colour getRed:&r green:&g blue:&b alpha:&a]) {
+                red += r;
+                green += g;
+                blue += b;
+                count++;
+            }
+        }
+    }
+    if (count == 0) {
+        return nil;
+    }
+    return [UIColor colorWithRed:red / count green:green / count blue:blue / count alpha:1.0];
+}
+
 - (UIColor *)dottoBadgeColour {
+    if ([self.dottoApplicationIcon isKindOfClass:[SBFolderIcon class]]) {
+        UIColor *folderAverage = DottoAverageFolderColour((SBFolderIcon *)self.dottoApplicationIcon);
+        DOTTOLOG(@"badgeColour: folder average=%@", folderAverage);
+        if (folderAverage) {
+            return folderAverage;
+        }
+    }
     if ([self.dottoInfoProvider isKindOfClass:[SBForceTouchAppIconInfoProvider class]]) {
         DOTTOLOG(@"badgeColour: force-touch provider -> selected");
         return [dottoPrefs dottoSelectedColour];
@@ -317,6 +358,10 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
             [subview setHidden:YES];
         }
     }
+    // SnowBoard themes the badge by painting the background view's background
+    // colour (the red pill); clear it so only our tinted art draws.
+    [backgroundView setBackgroundColor:[UIColor clearColor]];
+    [backgroundView.layer setBackgroundColor:nil];
 }
 
 @end
