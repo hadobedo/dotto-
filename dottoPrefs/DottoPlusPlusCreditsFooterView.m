@@ -27,7 +27,7 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
     [self addSubview:_stackView];
 
     [NSLayoutConstraint activateConstraints:@[
-        [_stackView.topAnchor constraintEqualToAnchor:self.topAnchor constant:12],
+        [_stackView.topAnchor constraintEqualToAnchor:self.topAnchor constant:4],
         [_stackView.centerXAnchor constraintEqualToAnchor:self.centerXAnchor],
         [_stackView.widthAnchor constraintLessThanOrEqualToAnchor:self.widthAnchor constant:-32],
     ]];
@@ -38,8 +38,8 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
     iconView.clipsToBounds = YES;
     iconView.translatesAutoresizingMaskIntoConstraints = NO;
     [NSLayoutConstraint activateConstraints:@[
-        [iconView.widthAnchor constraintEqualToConstant:48],
-        [iconView.heightAnchor constraintEqualToConstant:48],
+        [iconView.widthAnchor constraintEqualToConstant:44],
+        [iconView.heightAnchor constraintEqualToConstant:44],
     ]];
     [_stackView addArrangedSubview:iconView];
 
@@ -52,7 +52,7 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
 
     // Original tweak credit (tappable -> Dynastic archive).
     UIButton *originalButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [originalButton setTitle:@"iOS 17 rebuild of dotto+ by Mirac & ConorTheDev"
+    [originalButton setTitle:@"Rootless adaptation of dotto+ by Mirac & ConorTheDev"
                     forState:UIControlStateNormal];
     originalButton.titleLabel.font = [UIFont systemFontOfSize:12];
     [originalButton setImage:[UIImage systemImageNamed:@"chevron.right"] forState:UIControlStateNormal];
@@ -138,7 +138,7 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
 }
 
 - (CGFloat)preferredHeightForWidth:(CGFloat)width {
-    return 208;
+    return 174;
 }
 
 - (CGFloat)preferredHeightForWidth:(CGFloat)width inTableView:(UITableView *)tableView {

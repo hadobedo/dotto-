@@ -31,16 +31,41 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
     return _specifiers;
 }
 
-// Credits footer: PSListController's footerViewClass plist hook did not render
-// on iOS 17, so install the footer through the table delegate instead.
+// Credits footer: rendered through the table delegate for the last section
+// (PSListController's footerViewClass plist hook does not fire on iOS 17).
+// The respring note renders directly beneath the Opacity rows with standard
+// footer styling, then the compact credits block follows with no dead space.
 - (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
     if (section == tableView.numberOfSections - 1) {
-        static UIView *creditsView = nil;
+        static UIView *combinedFooter = nil;
         static dispatch_once_t onceToken;
         dispatch_once(&onceToken, ^{
-            creditsView = [[DottoPlusPlusCreditsFooterView alloc] initWithSpecifier:nil];
+            UILabel *note = [[UILabel alloc] init];
+            note.text = @"A respring is recommended after disabling.";
+            note.font = [UIFont systemFontOfSize:13];
+            note.textColor = [UIColor secondaryLabelColor];
+            note.textAlignment = NSTextAlignmentCenter;
+            note.numberOfLines = 0;
+            note.translatesAutoresizingMaskIntoConstraints = NO;
+
+            DottoPlusPlusCreditsFooterView *credits = [[DottoPlusPlusCreditsFooterView alloc] initWithSpecifier:nil];
+            credits.translatesAutoresizingMaskIntoConstraints = NO;
+
+            UIView *container = [[UIView alloc] init];
+            [container addSubview:note];
+            [container addSubview:credits];
+            [NSLayoutConstraint activateConstraints:@[
+                [note.topAnchor constraintEqualToAnchor:container.topAnchor],
+                [note.leadingAnchor constraintEqualToAnchor:container.leadingAnchor constant:16],
+                [note.trailingAnchor constraintEqualToAnchor:container.trailingAnchor constant:-16],
+                [credits.topAnchor constraintEqualToAnchor:note.bottomAnchor constant:8],
+                [credits.leadingAnchor constraintEqualToAnchor:container.leadingAnchor],
+                [credits.trailingAnchor constraintEqualToAnchor:container.trailingAnchor],
+                [credits.bottomAnchor constraintEqualToAnchor:container.bottomAnchor],
+            ]];
+            combinedFooter = container;
         });
-        return creditsView;
+        return combinedFooter;
     }
     if ([super respondsToSelector:@selector(tableView:viewForFooterInSection:)]) {
         return [super tableView:tableView viewForFooterInSection:section];
@@ -50,7 +75,7 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
 
 - (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
     if (section == tableView.numberOfSections - 1) {
-        return 208;
+        return 174 + 22 + 8;
     }
     if ([super respondsToSelector:@selector(tableView:heightForFooterInSection:)]) {
         return [super tableView:tableView heightForFooterInSection:section];
