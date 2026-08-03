@@ -33,41 +33,39 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
         [_stackView.trailingAnchor constraintEqualToAnchor:self.trailingAnchor constant:-16],
     ]];
 
-    // App icon.
-    UIImageView *iconView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"icon@3x.png"]];
-    iconView.layer.cornerRadius = 12;
-    iconView.clipsToBounds = YES;
-    iconView.translatesAutoresizingMaskIntoConstraints = NO;
-    [NSLayoutConstraint activateConstraints:@[
-        [iconView.widthAnchor constraintEqualToConstant:44],
-        [iconView.heightAnchor constraintEqualToConstant:44],
-    ]];
-    [_stackView addArrangedSubview:iconView];
+    // Source first.
+    UIButton *sourceButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [sourceButton setTitle:@"Source on GitHub" forState:UIControlStateNormal];
+    sourceButton.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
+    [sourceButton setImage:[UIImage systemImageNamed:@"chevron.right"] forState:UIControlStateNormal];
+    sourceButton.semanticContentAttribute = UISemanticContentAttributeForceRightToLeft;
+    [sourceButton addTarget:self action:@selector(openSource) forControlEvents:UIControlEventTouchUpInside];
+    [_stackView addArrangedSubview:sourceButton];
 
-    // Original tweak credit (tappable -> Dynastic archive). Wraps to a second
-    // line instead of truncating on narrow screens.
+    UILabel *authorLabel = [[UILabel alloc] init];
+    authorLabel.text = @"Nick's Works";
+    authorLabel.font = [UIFont systemFontOfSize:13];
+    authorLabel.textColor = [UIColor secondaryLabelColor];
+    [_stackView addArrangedSubview:authorLabel];
+    [authorLabel.topAnchor constraintEqualToAnchor:sourceButton.bottomAnchor constant:6].active = YES;
+
+    // Original tweak credit (tappable -> Dynastic archive).
     UIButton *originalButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [originalButton setTitle:@"Rootless adaptation of dotto+ by Mirac & ConorTheDev"
-                    forState:UIControlStateNormal];
-    originalButton.titleLabel.font = [UIFont systemFontOfSize:12];
-    originalButton.titleLabel.numberOfLines = 2;
-    originalButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
-    originalButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+    [originalButton setTitle:@"Original tweak (dotto+)" forState:UIControlStateNormal];
+    originalButton.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
     [originalButton setImage:[UIImage systemImageNamed:@"chevron.right"] forState:UIControlStateNormal];
     originalButton.semanticContentAttribute = UISemanticContentAttributeForceRightToLeft;
-    originalButton.translatesAutoresizingMaskIntoConstraints = NO;
     [originalButton addTarget:self action:@selector(openOriginal) forControlEvents:UIControlEventTouchUpInside];
     [_stackView addArrangedSubview:originalButton];
-    [originalButton.leadingAnchor constraintEqualToAnchor:_stackView.leadingAnchor].active = YES;
-    [originalButton.trailingAnchor constraintEqualToAnchor:_stackView.trailingAnchor].active = YES;
+    [originalButton.topAnchor constraintEqualToAnchor:authorLabel.bottomAnchor constant:8].active = YES;
 
-    UILabel *subtitleLabel = [[UILabel alloc] init];
-    subtitleLabel.text = @"by Nick's Works";
-    subtitleLabel.font = [UIFont systemFontOfSize:13];
-    subtitleLabel.textColor = [UIColor secondaryLabelColor];
-    [_stackView addArrangedSubview:subtitleLabel];
+    UILabel *originalAuthors = [[UILabel alloc] init];
+    originalAuthors.text = @"by Mirac & ConorTheDev";
+    originalAuthors.font = [UIFont systemFontOfSize:11];
+    originalAuthors.textColor = [UIColor tertiaryLabelColor];
+    [_stackView addArrangedSubview:originalAuthors];
 
-    // Social links.
+    // Socials at the bottom. SF Symbols ships no brand icons, so text pills.
     UIStackView *socialRow = [[UIStackView alloc] init];
     socialRow.axis = UILayoutConstraintAxisHorizontal;
     socialRow.alignment = UIStackViewAlignmentCenter;
@@ -80,16 +78,7 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
     [socialRow addArrangedSubview:[self pillButtonWithTitle:@"YouTube"
                                                     action:@selector(openYouTube)]];
     [_stackView addArrangedSubview:socialRow];
-    [socialRow.topAnchor constraintEqualToAnchor:subtitleLabel.bottomAnchor constant:10].active = YES;
-
-    // Source link.
-    UIButton *sourceButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [sourceButton setTitle:@"Source on GitHub" forState:UIControlStateNormal];
-    sourceButton.titleLabel.font = [UIFont systemFontOfSize:12];
-    [sourceButton setImage:[UIImage systemImageNamed:@"chevron.right"] forState:UIControlStateNormal];
-    sourceButton.semanticContentAttribute = UISemanticContentAttributeForceRightToLeft;
-    [sourceButton addTarget:self action:@selector(openSource) forControlEvents:UIControlEventTouchUpInside];
-    [_stackView addArrangedSubview:sourceButton];
+    [socialRow.topAnchor constraintEqualToAnchor:originalAuthors.bottomAnchor constant:10].active = YES;
 }
 
 - (UIButton *)pillButtonWithTitle:(NSString *)title action:(SEL)action {

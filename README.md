@@ -2,7 +2,7 @@
 
 iOS 17 (Dopamine/rootHide, roothide scheme) rebuild of **dotto+ 1.0.6**
 by ConorTheDev & Mirac — notification badges, your style: circle or rounded
-badges tinted with a selected or icon-adaptive color, no text.
+badges tinted with a selected or icon-adaptive colour, no text.
 
 This is a from-scratch reimplementation (internal codename **DottoPlusPlus**)
 of the original 2020 binary, targeting iOS 17.1 / iPhone arm64e / RootHide with
@@ -12,10 +12,10 @@ ElleKit. It is built with the same pinned RootHide Theos fork and CI flow as
 ## Features (rebuilt)
 
 - Two badge appearances: **dotto** (rounded) and **dotto O's** (circle).
-- **Adaptive Color**: badges take the dominant color of the app icon
+- **Adaptive Colour**: badges take the dominant color of the app icon
   (folder icons and force-touch providers fall back to the selected color).
-- **Use Pastel Colors**: lightens the badge color.
-- Selected color picker with 11 standard colors + system color picker (iOS 14+).
+- **Use Pastel Colours**: lightens the badge color.
+- Selected colour picker with 11 standard colours + system colour picker (iOS 14+).
 - **Opacity** slider (10–100%).
 - Global enable switch in the Settings navigation bar.
 - Live updates via the `me.conorthedev.dotto/ReloadPrefs` Darwin notification.

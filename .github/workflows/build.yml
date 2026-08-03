@@ -17,8 +17,10 @@ jobs:
         include:
           - scheme: roothide
             archs: "arm64 arm64e"
+            expected_arch: iphoneos-arm64e
           - scheme: rootless
             archs: "arm64 arm64e"
+            expected_arch: iphoneos-arm64
     env:
       ROOTHIDE_THEOS_COMMIT: 88506b2c22e9e07dd4ed055f23c9e398a117a2c7
     steps:
@@ -53,6 +55,8 @@ jobs:
         run: make clean package THEOS_PACKAGE_SCHEME=${{ matrix.scheme }} ARCHS="${{ matrix.archs }}" PACKAGE_VERSION="${{ steps.package-version.outputs.version }}"
 
       - name: Verify package metadata
+        env:
+          EXPECTED_ARCH: ${{ matrix.expected_arch }}
         run: scripts/verify_package.sh
 
       - name: Record artifact hashes

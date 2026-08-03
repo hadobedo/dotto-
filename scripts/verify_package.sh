@@ -44,8 +44,9 @@ fi
 
 grep -Fx 'Package: me.conorthedev.dotto+' "$package_control" \
     || { echo "Package mismatch:" >&2; grep '^Package:' "$package_control" >&2; exit 1; }
-grep -Fx 'Architecture: iphoneos-arm64' "$package_control" \
-    || { echo "Architecture mismatch:" >&2; grep '^Architecture:' "$package_control" >&2; exit 1; }
+EXPECTED_ARCH="${EXPECTED_ARCH:-iphoneos-arm64e}"
+grep -Fx "Architecture: $EXPECTED_ARCH" "$package_control" \
+    || { echo "Architecture mismatch (expected $EXPECTED_ARCH):" >&2; grep '^Architecture:' "$package_control" >&2; exit 1; }
 grep -F 'Depends: firmware (>= 17.0), ellekit, preferenceloader' "$package_control" \
     || { echo "Depends mismatch:" >&2; grep '^Depends:' "$package_control" >&2; exit 1; }
 

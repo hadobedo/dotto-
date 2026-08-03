@@ -83,7 +83,9 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
 
 - (void)setPreferenceValue:(id)value specifier:(PSSpecifier *)specifier {
     if ([[specifier propertyForKey:@"key"] isEqualToString:kAdaptiveColor]) {
-        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:2 inSection:0];
+        // The swatch row (section 1, row 0) is greyed out while adaptive
+        // colouring is on; the selected colour only matters when it is off.
+        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:0 inSection:1];
         [self setCellForRowAtIndexPath:indexPath enabled:![value boolValue]];
     }
     [super setPreferenceValue:value specifier:specifier];
@@ -91,7 +93,7 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
 
 - (id)readPreferenceValue:(PSSpecifier *)specifier {
     if ([[specifier propertyForKey:@"key"] isEqualToString:kAdaptiveColor]) {
-        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:2 inSection:0];
+        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:0 inSection:1];
         [self setCellForRowAtIndexPath:indexPath
                                enabled:![self.preferences adaptiveColorEnabled]];
     }

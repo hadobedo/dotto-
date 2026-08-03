@@ -51,7 +51,7 @@
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
-			<string>Color</string>
+			<string>Colour</string>
 		</dict>
 		<dict>
             <key>cell</key>
@@ -71,7 +71,7 @@
 			<key>key</key>
 			<string>kAdaptiveColor</string>
 			<key>label</key>
-			<string>Adaptive Color</string>
+			<string>Adaptive Colour</string>
 			<key>PostNotification</key>
 			<string>me.conorthedev.dotto/ReloadPrefs</string>
 		</dict>
@@ -85,7 +85,7 @@
 			<key>key</key>
 			<string>kUsePastelColor</string>
 			<key>label</key>
-			<string>Use Pastel Colors</string>
+			<string>Use Pastel Colours</string>
 			<key>PostNotification</key>
 			<string>me.conorthedev.dotto/ReloadPrefs</string>
 		</dict>
