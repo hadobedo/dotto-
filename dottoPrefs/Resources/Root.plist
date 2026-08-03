@@ -117,11 +117,13 @@
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
-			<string>About &amp; Links</string>
+			<string>Credits &amp; Source</string>
 		</dict>
 		<dict>
 			<key>cell</key>
 			<string>PSLinkCell</string>
+			<key>cellClass</key>
+			<string>DottoPlusPlusProfileLinkCell</string>
 			<key>detail</key>
 			<string>DottoPlusPlusLinksListController</string>
 			<key>label</key>
@@ -131,7 +133,9 @@
 		</dict>
 		<dict>
 			<key>cell</key>
-			<string>PSSubtitleCell</string>
+			<string>PSLinkCell</string>
+			<key>cellClass</key>
+			<string>DottoPlusPlusOriginalLinkCell</string>
 			<key>label</key>
 			<string>Original tweak (dotto+)</string>
 			<key>subtitle</key>

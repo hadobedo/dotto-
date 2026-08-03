@@ -44,7 +44,8 @@ dottoPrefs_FILES = dottoPrefs/DottoPlusPlusRootListController.m \
 	dottoPrefs/DottoPlusPlusColorSelectionTableCell.m \
 	dottoPrefs/DottoPlusPlusColorRowStackView.m \
 	dottoPrefs/DottoPlusPlusColorItemView.m \
-	dottoPrefs/DottoPlusPlusLinksListController.m
+	dottoPrefs/DottoPlusPlusLinksListController.m \
+	dottoPrefs/DottoPlusPlusCreditCells.m
 dottoPrefs_INSTALL_PATH = /Library/PreferenceBundles
 # Bundle resources (Info.plist, Root.plist, images) live in dottoPrefs/Resources.
 dottoPrefs_RESOURCE_DIRS = dottoPrefs/Resources
