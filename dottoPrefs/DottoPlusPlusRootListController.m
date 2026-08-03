@@ -50,7 +50,7 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
 
 - (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
     if (section == tableView.numberOfSections - 1) {
-        return 292;
+        return 208;
     }
     if ([super respondsToSelector:@selector(tableView:heightForFooterInSection:)]) {
         return [super tableView:tableView heightForFooterInSection:section];
