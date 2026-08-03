@@ -22,7 +22,7 @@ ElleKit. It is built with the same pinned RootHide Theos fork and CI flow as
 
 ## Requirements
 
-- iOS 17.x iPhone (arm64e), RootHide/Dopamine with ElleKit.
+- iPhone on iOS 15–17.x (arm64/arm64e), rootless or RootHide/Dopamine with ElleKit.
 - `preferenceloader` for the Settings pane.
 
 ## Build

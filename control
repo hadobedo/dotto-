@@ -6,4 +6,4 @@ Description: Notifications, your style. A rootless adaptation of dotto+ 1.0.6 by
 Maintainer: ConorTheDev <conorthedev@gmail.com>
 Author: ConorTheDev & Mirac
 Section: Tweaks
-Depends: firmware (>= 17.0), firmware (<< 18.0), ellekit, preferenceloader
+Depends: firmware (<< 18.0), ellekit, preferenceloader
