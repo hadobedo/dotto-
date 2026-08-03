@@ -34,8 +34,27 @@ static BOOL DottoDebugEnabled(void) {
     return [defaults boolForKey:@"DottoDebug"];
 }
 
+// Also append to a file readable over SSH (unified log is not reachable from
+// the jailbreak shell).
+static void DottoDebugAppend(NSString *message) {
+    NSString *path = @"/var/mobile/dotto_debug.log";
+    NSFileManager *fm = [NSFileManager defaultManager];
+    if (![fm fileExistsAtPath:path]) {
+        [@"" writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+    }
+    NSFileHandle *fh = [NSFileHandle fileHandleForWritingAtPath:path];
+    if (fh) {
+        [fh seekToEndOfFile];
+        [fh writeData:[message dataUsingEncoding:NSUTF8StringEncoding]];
+        [fh closeFile];
+    }
+}
+
 #define DOTTOLOG(...) do { if (DottoDebugEnabled()) { \
-    NSLog(@"[dotto+] " __VA_ARGS__); } } while (0)
+    NSString *_m = [NSString stringWithFormat:@"[dotto+] " __VA_ARGS__]; \
+    NSLog(@"%@", _m); \
+    DottoDebugAppend([_m stringByAppendingString:@"\n"]); \
+} } while (0)
 
 #pragma mark - Badge art
 
@@ -211,9 +230,17 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
             [subviews addObject:[NSString stringWithFormat:@"%@(%@)", NSStringFromClass([subview class]),
                                  NSStringFromCGRect(subview.frame)]];
         }
-        DOTTOLOG(@"applyDotto self=%@ frame=%@ bounds=%@ ivars=[%@] subviews=[%@] enabled=%d bg=%@ (%@ frame=%@ img=%@ tint=%@ alpha=%.2f) tv=%@ hidden=%d",
+        NSMutableArray<NSString *> *ancestors = [NSMutableArray array];
+        UIView *ancestor = self.superview;
+        while (ancestor && ancestors.count < 6) {
+            [ancestors addObject:[NSString stringWithFormat:@"%@(%@)", NSStringFromClass([ancestor class]),
+                                  NSStringFromCGRect(ancestor.frame)]];
+            ancestor = ancestor.superview;
+        }
+        DOTTOLOG(@"applyDotto self=%@ frame=%@ bounds=%@ ivars=[%@] subviews=[%@] ancestors=[%@] enabled=%d bg=%@ (%@ frame=%@ img=%@ tint=%@ alpha=%.2f) tv=%@ hidden=%d",
                  self, NSStringFromCGRect(self.frame), NSStringFromCGRect(self.bounds),
                  [ivarNames componentsJoinedByString:@","], [subviews componentsJoinedByString:@","],
+                 [ancestors componentsJoinedByString:@","],
                  [dottoPrefs tweakEnabled], backgroundView, NSStringFromClass([backgroundView class]),
                  NSStringFromCGRect([backgroundView frame]), [backgroundView image],
                  [backgroundView tintColor], [backgroundView alpha], textView, [textView isHidden]);
