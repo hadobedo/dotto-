@@ -18,8 +18,6 @@ static const double kCellHeight = 90.0;
               reuseIdentifier:(NSString *)reuseIdentifier
                     specifier:(PSSpecifier *)specifier {
     if ((self = [super initWithStyle:style reuseIdentifier:reuseIdentifier specifier:specifier])) {
-        [self setYellowTaps:NO];
-
         self.preferences = [DottoPreferences sharedInstance];
         [self.preferences reloadPreferences];
 

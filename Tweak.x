@@ -22,6 +22,77 @@ static NSString *const DottoNormalBadgePath =
 static NSString *const DottoCircleBadgePath =
     @"/Library/Application Support/dotto/badges/circle/SBBadgeBG@3x.png";
 
+#pragma mark - Diagnostics (temporary, gated by DottoDebug prefs key)
+
+static BOOL DottoDebugEnabled(void) {
+    return [[[NSUserDefaults alloc] initWithSuiteName:@"me.conorthedev.dotto.prefs"]
+            boolForKey:@"DottoDebug"];
+}
+
+#define DOTTOLOG(...) do { if (DottoDebugEnabled()) { \
+    NSLog(@"[dotto+] " __VA_ARGS__); } } while (0)
+
+#pragma mark - Badge art
+
+// The shipped badge art occupies only the top-right corner of its 95x95 canvas
+// (~36x36 px). Crop it to its opaque bounding box so the dot fills the frame.
+static UIImage *DottoCroppedBadgeImage(NSString *path) {
+    static NSMutableDictionary<NSString *, UIImage *> *cache = nil;
+    if (!cache) {
+        cache = [NSMutableDictionary dictionary];
+    }
+    UIImage *cached = cache[path];
+    if (cached) {
+        return cached;
+    }
+    UIImage *image = [UIImage imageWithContentsOfFile:path];
+    CGImageRef cgImage = image.CGImage;
+    if (!cgImage) {
+        return image;
+    }
+    size_t width = CGImageGetWidth(cgImage);
+    size_t height = CGImageGetHeight(cgImage);
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    unsigned char *pixels = calloc(width * height * 4, sizeof(unsigned char));
+    if (pixels) {
+        CGContextRef ctx = CGBitmapContextCreate(pixels, width, height, 8, width * 4,
+                                                 colorSpace, kCGImageAlphaPremultipliedLast);
+        if (ctx) {
+            CGContextDrawImage(ctx, CGRectMake(0, 0, width, height), cgImage);
+            size_t minX = width, minY = height, maxX = 0, maxY = 0;
+            for (size_t y = 0; y < height; y++) {
+                for (size_t x = 0; x < width; x++) {
+                    if (pixels[(y * width + x) * 4 + 3] > 16) {
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+            }
+            CGContextRelease(ctx);
+            if (maxX > minX && maxY > minY) {
+                CGRect crop = CGRectMake(minX, minY, maxX - minX + 1, maxY - minY + 1);
+                CGImageRef cropped = CGImageCreateWithImageInRect(cgImage, crop);
+                if (cropped) {
+                    UIImage *result = [UIImage imageWithCGImage:cropped
+                                                          scale:image.scale
+                                                    orientation:image.imageOrientation];
+                    CGImageRelease(cropped);
+                    cache[path] = result;
+                    free(pixels);
+                    CGColorSpaceRelease(colorSpace);
+                    return result;
+                }
+            }
+        }
+        free(pixels);
+    }
+    CGColorSpaceRelease(colorSpace);
+    cache[path] = image;
+    return image;
+}
+
 #pragma mark - SBIconBadgeView associated state + new methods
 
 static char const kDottoIsIconFolderKey;
@@ -122,6 +193,11 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
     UIImageView *backgroundView = [self valueForKey:@"backgroundView"];
     UIImageView *textView = [self valueForKey:@"textView"];
 
+    DOTTOLOG(@"applyDotto self=%@ enabled=%d bg=%@ (%@ frame=%@ img=%@ tint=%@ alpha=%.2f) tv=%@ hidden=%d",
+             self, [dottoPrefs tweakEnabled], backgroundView, NSStringFromClass([backgroundView class]),
+             NSStringFromCGRect([backgroundView frame]), [backgroundView image],
+             [backgroundView tintColor], [backgroundView alpha], textView, [textView isHidden]);
+
     if (![dottoPrefs tweakEnabled]) {
         // Stock restore. The original read valueForKey:@"backgroundImageTuple",
         // which no longer exists on iOS 17; restore the captured stock image
@@ -137,7 +213,7 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
 
     NSString *path = [dottoPrefs appearanceStyle] != 0 ? DottoCircleBadgePath
                                                        : DottoNormalBadgePath;
-    UIImage *badgeImage = [[UIImage imageWithContentsOfFile:path]
+    UIImage *badgeImage = [DottoCroppedBadgeImage(path)
                            imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
 
     if (!self.dottoStockBackgroundImage) {
@@ -159,6 +235,9 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
     [backgroundView setCenter:CGPointMake(13, 13)];
     [backgroundView setAlpha:[dottoPrefs transparency]];
     [textView setHidden:YES];
+    DOTTOLOG(@"applyDotto DONE bg=%@ frame=%@ img=%@ tint=%@ alpha=%.2f",
+             backgroundView, NSStringFromCGRect([backgroundView frame]), [backgroundView image],
+             [backgroundView tintColor], [backgroundView alpha]);
 }
 
 @end
@@ -265,6 +344,7 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
 
 - (void)configureForIcon:(id)icon infoProvider:(id)provider {
     %orig;
+    DOTTOLOG(@"configureForIcon icon=%@ provider=%@", icon, provider);
     self.dottoApplicationIcon = icon;
     self.dottoInfoProvider = provider;
     [self applyDotto];
@@ -305,5 +385,9 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
                                         (CFStringRef)DottoReloadNotification,
                                         NULL,
                                         CFNotificationSuspensionBehaviorDeliverImmediately);
+        DOTTOLOG(@"ctor: loaded, enabled=%d style=%ld adaptive=%d pastel=%d alpha=%.2f",
+                 [dottoPrefs tweakEnabled], (long)[dottoPrefs appearanceStyle],
+                 [dottoPrefs adaptiveColorEnabled], [dottoPrefs pastelColorsEnabled],
+                 [dottoPrefs transparency]);
     }
 }
