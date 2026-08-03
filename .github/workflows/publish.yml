@@ -110,6 +110,9 @@ jobs:
         shell: bash
         run: git clone git@github.com:hadobedo/repo.git feed
 
+      - name: Install repository tools
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y dpkg-dev
+
       - name: Update package indexes
         shell: bash
         run: |
