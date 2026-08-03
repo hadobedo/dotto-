@@ -233,11 +233,8 @@ jobs:
             printf '## dotto++ %s\n\n' "$version"
             printf 'Minimalistic notification dots for iOS 15-17, rebuilt for rootless/roothide jailbreaks.\n'
             printf 'Rootless rewrite of the original dotto+ by ConorTheDev & Mirac.\n\n'
-            printf '**Package repo:** https://hadobedo.github.io/repo\n\n'
             printf '### Install\n'
-            printf 'Add the repo above to Sileo/Zebra, or install the deb matching your jailbreak:\n'
-            printf -- '- `iphoneos-arm64` deb -> rootless (Dopamine, palera1n rootless)\n'
-            printf -- '- `iphoneos-arm64e` deb -> roothide\n\n'
+            printf 'Add https://hadobedo.github.io/repo to Sileo or Zebra, then install dotto++.\n'
             printf 'Requires iOS 15-17 on a rootless/roothide jailbreak.\n\n'
             if [ -n "$previous_tag" ]; then
               # Main-line commits since the previous tag only (--first-parent
