@@ -50,21 +50,22 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
     titleLabel.textColor = [UIColor labelColor];
     [_stackView addArrangedSubview:titleLabel];
 
-    UILabel *subtitleLabel = [[UILabel alloc] init];
-    subtitleLabel.text = @"by Nick's Works";
-    subtitleLabel.font = [UIFont systemFontOfSize:13];
-    subtitleLabel.textColor = [UIColor secondaryLabelColor];
-    [_stackView addArrangedSubview:subtitleLabel];
-
-    // Original tweak credit.
+    // Original tweak credit (tappable -> Dynastic archive).
     UIButton *originalButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [originalButton setTitle:@"Original dotto+ by Mirac & ConorTheDev" forState:UIControlStateNormal];
+    [originalButton setTitle:@"iOS 17 rebuild of dotto+ by Mirac & ConorTheDev"
+                    forState:UIControlStateNormal];
     originalButton.titleLabel.font = [UIFont systemFontOfSize:12];
     [originalButton setImage:[UIImage systemImageNamed:@"chevron.right"] forState:UIControlStateNormal];
     originalButton.semanticContentAttribute = UISemanticContentAttributeForceRightToLeft;
     [originalButton addTarget:self action:@selector(openOriginal) forControlEvents:UIControlEventTouchUpInside];
     [_stackView addArrangedSubview:originalButton];
-    [originalButton.topAnchor constraintEqualToAnchor:subtitleLabel.bottomAnchor constant:10].active = YES;
+    [originalButton.topAnchor constraintEqualToAnchor:titleLabel.bottomAnchor constant:8].active = YES;
+
+    UILabel *subtitleLabel = [[UILabel alloc] init];
+    subtitleLabel.text = @"by Nick's Works";
+    subtitleLabel.font = [UIFont systemFontOfSize:13];
+    subtitleLabel.textColor = [UIColor secondaryLabelColor];
+    [_stackView addArrangedSubview:subtitleLabel];
 
     // Social links.
     UIStackView *socialRow = [[UIStackView alloc] init];
