@@ -24,9 +24,13 @@ static NSString *const DottoCircleBadgePath =
 
 #pragma mark - Diagnostics (temporary, gated by DottoDebug prefs key)
 
+// Debug builds log by default; set me.conorthedev.dotto.prefs DottoDebug=NO to silence.
 static BOOL DottoDebugEnabled(void) {
-    return [[[NSUserDefaults alloc] initWithSuiteName:@"me.conorthedev.dotto.prefs"]
-            boolForKey:@"DottoDebug"];
+    NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:@"me.conorthedev.dotto.prefs"];
+    if ([defaults objectForKey:@"DottoDebug"] == nil) {
+        return YES;
+    }
+    return [defaults boolForKey:@"DottoDebug"];
 }
 
 #define DOTTOLOG(...) do { if (DottoDebugEnabled()) { \
@@ -193,10 +197,26 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
     UIImageView *backgroundView = [self valueForKey:@"backgroundView"];
     UIImageView *textView = [self valueForKey:@"textView"];
 
-    DOTTOLOG(@"applyDotto self=%@ enabled=%d bg=%@ (%@ frame=%@ img=%@ tint=%@ alpha=%.2f) tv=%@ hidden=%d",
-             self, [dottoPrefs tweakEnabled], backgroundView, NSStringFromClass([backgroundView class]),
-             NSStringFromCGRect([backgroundView frame]), [backgroundView image],
-             [backgroundView tintColor], [backgroundView alpha], textView, [textView isHidden]);
+    if (DottoDebugEnabled()) {
+        NSMutableArray<NSString *> *ivarNames = [NSMutableArray array];
+        unsigned int ivarCount = 0;
+        Ivar *ivars = class_copyIvarList([self class], &ivarCount);
+        for (unsigned int i = 0; i < ivarCount; i++) {
+            [ivarNames addObject:[NSString stringWithUTF8String:ivar_getName(ivars[i])]];
+        }
+        free(ivars);
+        NSMutableArray<NSString *> *subviews = [NSMutableArray array];
+        for (UIView *subview in self.subviews) {
+            [subviews addObject:[NSString stringWithFormat:@"%@(%@)", NSStringFromClass([subview class]),
+                                 NSStringFromCGRect(subview.frame)]];
+        }
+        DOTTOLOG(@"applyDotto self=%@ frame=%@ bounds=%@ ivars=[%@] subviews=[%@] enabled=%d bg=%@ (%@ frame=%@ img=%@ tint=%@ alpha=%.2f) tv=%@ hidden=%d",
+                 self, NSStringFromCGRect(self.frame), NSStringFromCGRect(self.bounds),
+                 [ivarNames componentsJoinedByString:@","], [subviews componentsJoinedByString:@","],
+                 [dottoPrefs tweakEnabled], backgroundView, NSStringFromClass([backgroundView class]),
+                 NSStringFromCGRect([backgroundView frame]), [backgroundView image],
+                 [backgroundView tintColor], [backgroundView alpha], textView, [textView isHidden]);
+    }
 
     if (![dottoPrefs tweakEnabled]) {
         // Stock restore. The original read valueForKey:@"backgroundImageTuple",
