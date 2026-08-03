@@ -31,6 +31,33 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
     return _specifiers;
 }
 
+// Credits footer: PSListController's footerViewClass plist hook did not render
+// on iOS 17, so install the footer through the table delegate instead.
+- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
+    if (section == tableView.numberOfSections - 1) {
+        static UIView *creditsView = nil;
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            creditsView = [[DottoPlusPlusCreditsFooterView alloc] initWithSpecifier:nil];
+        });
+        return creditsView;
+    }
+    if ([super respondsToSelector:@selector(tableView:viewForFooterInSection:)]) {
+        return [super tableView:tableView viewForFooterInSection:section];
+    }
+    return nil;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
+    if (section == tableView.numberOfSections - 1) {
+        return 292;
+    }
+    if ([super respondsToSelector:@selector(tableView:heightForFooterInSection:)]) {
+        return [super tableView:tableView heightForFooterInSection:section];
+    }
+    return UITableViewAutomaticDimension;
+}
+
 - (void)switchToggled:(UISwitch *)sender {
     [self.preferences writeValue:@([sender isOn]) forKey:kEnabled];
 }
