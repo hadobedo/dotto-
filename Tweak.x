@@ -16,6 +16,10 @@
 
 static NSMutableArray *dottoBadgeViews;
 static DottoPreferences *dottoPrefs;
+// Adaptive colour cache: icon uniqueIdentifier -> colour. Computing the
+// dominant colour scans pixels, so cache per icon and only recompute on
+// preference reloads (badge/icon colours are stable within a session).
+static NSMutableDictionary<NSString *, UIColor *> *dottoColourCache;
 // SnowBoard (and other badge themers) may hook the same methods and load after
 // dotto (alphabetical dylib order), so their changes win within a layout pass.
 // Re-assert dotto once per pass on the next runloop turn to have the last word.
@@ -32,9 +36,6 @@ static NSString *const DottoCircleBadgePath =
 // Debug builds log by default; set me.conorthedev.dotto.prefs DottoDebug=NO to silence.
 static BOOL DottoDebugEnabled(void) {
     NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:@"me.conorthedev.dotto.prefs"];
-    if ([defaults objectForKey:@"DottoDebug"] == nil) {
-        return YES;
-    }
     return [defaults boolForKey:@"DottoDebug"];
 }
 
@@ -146,6 +147,7 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
                               CFDictionaryRef userInfo __unused) {
     @autoreleasepool {
         [dottoPrefs reloadPreferences];
+        [dottoColourCache removeAllObjects];
         for (SBIconBadgeView *badgeView in dottoBadgeViews) {
             [badgeView applyDotto];
         }
@@ -232,29 +234,30 @@ static UIColor *DottoAverageFolderColour(SBFolderIcon *folderIcon) {
 }
 
 - (UIColor *)dottoBadgeColour {
+    NSString *iconID = self.dottoApplicationIcon.uniqueIdentifier;
+    UIColor *cached = iconID ? dottoColourCache[iconID] : nil;
+    if (cached) {
+        return cached;
+    }
+    UIColor *colour = nil;
     if ([self.dottoApplicationIcon isKindOfClass:[SBFolderIcon class]]) {
-        UIColor *folderAverage = DottoAverageFolderColour((SBFolderIcon *)self.dottoApplicationIcon);
-        DOTTOLOG(@"badgeColour: folder average=%@", folderAverage);
-        if (folderAverage) {
-            return folderAverage;
+        colour = DottoAverageFolderColour((SBFolderIcon *)self.dottoApplicationIcon);
+    } else if (![self.dottoInfoProvider isKindOfClass:[SBForceTouchAppIconInfoProvider class]]) {
+        UIView *imageView = [self.dottoInfoProvider valueForKey:@"iconImageView"];
+        if ([imageView respondsToSelector:@selector(contentsImage)]) {
+            UIImage *contentsImage = [(SBIconImageView *)imageView contentsImage];
+            if (contentsImage) {
+                colour = [contentsImage dottoAverageColor];
+            }
         }
     }
-    if ([self.dottoInfoProvider isKindOfClass:[SBForceTouchAppIconInfoProvider class]]) {
-        DOTTOLOG(@"badgeColour: force-touch provider -> selected");
-        return [dottoPrefs dottoSelectedColour];
+    if (!colour) {
+        colour = [dottoPrefs dottoSelectedColour];
     }
-    UIView *imageView = [self.dottoInfoProvider valueForKey:@"iconImageView"];
-    if ([imageView respondsToSelector:@selector(contentsImage)]) {
-        UIImage *contentsImage = [(SBIconImageView *)imageView contentsImage];
-        DOTTOLOG(@"badgeColour: icon=%@ provider=%@ imageView=%@ contents=%@",
-                 self.dottoApplicationIcon, self.dottoInfoProvider, imageView, contentsImage);
-        if (contentsImage) {
-            UIColor *average = [contentsImage dottoAverageColor];
-            DOTTOLOG(@"badgeColour: average=%@", average);
-            return average;
-        }
+    if (iconID) {
+        dottoColourCache[iconID] = colour;
     }
-    return [dottoPrefs dottoSelectedColour];
+    return colour;
 }
 
 - (void)applyDotto {
@@ -505,6 +508,7 @@ static UIColor *DottoAverageFolderColour(SBFolderIcon *folderIcon) {
 %ctor {
     @autoreleasepool {
         dottoBadgeViews = [NSMutableArray new];
+        dottoColourCache = [NSMutableDictionary dictionary];
         dottoPrefs = [DottoPreferences sharedInstance];
         [dottoPrefs reloadPreferences];
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
