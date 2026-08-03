@@ -21,19 +21,6 @@ static DottoPreferences *dottoPrefs;
 // Re-assert dotto once per pass on the next runloop turn to have the last word.
 static BOOL dottoReapplyScheduled;
 
-static void DottoScheduleReapply(void) {
-    if (dottoReapplyScheduled) {
-        return;
-    }
-    dottoReapplyScheduled = YES;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        dottoReapplyScheduled = NO;
-        for (SBIconBadgeView *badgeView in dottoBadgeViews) {
-            [badgeView applyDotto];
-        }
-    });
-}
-
 static NSString *const DottoReloadNotification = @"me.conorthedev.dotto/ReloadPrefs";
 static NSString *const DottoNormalBadgePath =
     @"/Library/Application Support/dotto/badges/normal/SBBadgeBG@3x.png";
@@ -156,6 +143,19 @@ static char const kDottoStockBackgroundImageKey;
 - (void)applyDotto;
 
 @end
+
+static void DottoScheduleReapply(void) {
+    if (dottoReapplyScheduled) {
+        return;
+    }
+    dottoReapplyScheduled = YES;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        dottoReapplyScheduled = NO;
+        for (SBIconBadgeView *badgeView in dottoBadgeViews) {
+            [badgeView applyDotto];
+        }
+    });
+}
 
 static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
                               void *observer __unused,
