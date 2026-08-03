@@ -234,7 +234,7 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
 }
 
 - (UIAlertAction *)actionWithTitle:(NSString *)title urlString:(NSString *)urlString {
-    return [UIAlertAction actionWithTitle:title style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+    return [UIAlertAction actionWithTitle:title style:UIAlertActionStyleDefault handler:^(UIAlertAction *action __unused) {
         [self openURLString:urlString];
     }];
 }
