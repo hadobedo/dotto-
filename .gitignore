@@ -1,0 +1,10 @@
+.theos/
+packages/
+*.deb
+deb_work/
+deb_extracted/
+dotto
+ghidra/
+ANALYSIS.md
+.DS_Store
+scripts/

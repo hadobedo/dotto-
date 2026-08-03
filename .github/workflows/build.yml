@@ -1,0 +1,76 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-package:
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - scheme: roothide
+            archs: "arm64 arm64e"
+            expected_arch: iphoneos-arm64e
+          - scheme: rootless
+            archs: "arm64 arm64e"
+            expected_arch: iphoneos-arm64
+    env:
+      ROOTHIDE_THEOS_COMMIT: 88506b2c22e9e07dd4ed055f23c9e398a117a2c7
+    steps:
+      - name: Check out dotto17
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Configure build environment
+        shell: bash
+        run: echo "THEOS=$RUNNER_TEMP/roothide-theos" >> "$GITHUB_ENV"
+
+      - name: Read package version
+        id: package-version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version_count=$(awk '$1 == "Version:" { count++ } END { print count + 0 }' control)
+          version=$(awk '$1 == "Version:" && NF == 2 { print $2 }' control)
+          test "$version_count" -eq 1
+          test -n "$version"
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+
+      - name: Check out pinned RootHide Theos
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --no-checkout https://github.com/roothide/theos.git "$THEOS"
+          git -C "$THEOS" checkout --detach "$ROOTHIDE_THEOS_COMMIT"
+          git -C "$THEOS" submodule update --init --recursive
+          test "$(git -C "$THEOS" rev-parse HEAD)" = "$ROOTHIDE_THEOS_COMMIT"
+
+      - name: Build debug package (${{ matrix.scheme }})
+        run: make clean package THEOS_PACKAGE_SCHEME=${{ matrix.scheme }} ARCHS="${{ matrix.archs }}" PACKAGE_VERSION="${{ steps.package-version.outputs.version }}"
+
+      - name: Verify package metadata
+        env:
+          EXPECTED_ARCH: ${{ matrix.expected_arch }}
+        run: scripts/verify_package.sh
+
+      - name: Record artifact hashes
+        shell: bash
+        run: |
+          cd packages
+          shasum -a 256 ./*.deb | tee SHA256SUMS
+
+      - name: Upload debug artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: dottoplusplus-${{ matrix.scheme }}-${{ steps.package-version.outputs.version }}-debug
+          path: |
+            packages/*.deb
+            packages/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
