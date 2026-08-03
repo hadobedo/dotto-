@@ -215,16 +215,22 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
 // dominant colour is used.
 - (UIColor *)dottoBadgeColour {
     if ([self.dottoApplicationIcon isKindOfClass:[SBFolderIcon class]]) {
+        DOTTOLOG(@"badgeColour: folder icon -> selected");
         return [dottoPrefs dottoSelectedColour];
     }
     if ([self.dottoInfoProvider isKindOfClass:[SBForceTouchAppIconInfoProvider class]]) {
+        DOTTOLOG(@"badgeColour: force-touch provider -> selected");
         return [dottoPrefs dottoSelectedColour];
     }
     UIView *imageView = [self.dottoInfoProvider valueForKey:@"iconImageView"];
     if ([imageView respondsToSelector:@selector(contentsImage)]) {
         UIImage *contentsImage = [(SBIconImageView *)imageView contentsImage];
+        DOTTOLOG(@"badgeColour: icon=%@ provider=%@ imageView=%@ contents=%@",
+                 self.dottoApplicationIcon, self.dottoInfoProvider, imageView, contentsImage);
         if (contentsImage) {
-            return [contentsImage dottoAverageColor];
+            UIColor *average = [contentsImage dottoAverageColor];
+            DOTTOLOG(@"badgeColour: average=%@", average);
+            return average;
         }
     }
     return [dottoPrefs dottoSelectedColour];
@@ -254,9 +260,23 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
                                   NSStringFromCGRect(ancestor.frame)]];
             ancestor = ancestor.superview;
         }
-        DOTTOLOG(@"applyDotto self=%@ frame=%@ bounds=%@ ivars=[%@] subviews=[%@] ancestors=[%@] enabled=%d bg=%@ (%@ frame=%@ img=%@ tint=%@ alpha=%.2f) tv=%@ hidden=%d",
+        // Siblings (the stock pill may be a sibling view of the badge).
+        NSMutableArray<NSString *> *siblings = [NSMutableArray array];
+        for (UIView *sibling in self.superview.subviews) {
+            [siblings addObject:[NSString stringWithFormat:@"%@(%@)hidden=%d alpha=%.2f",
+                                 NSStringFromClass([sibling class]), NSStringFromCGRect(sibling.frame),
+                                 sibling.hidden, sibling.alpha]];
+        }
+        NSMutableArray<NSString *> *badgeSublayers = [NSMutableArray array];
+        for (CALayer *sublayer in self.layer.sublayers) {
+            [badgeSublayers addObject:[NSString stringWithFormat:@"%@ contents=%@ bg=%@",
+                                       NSStringFromClass([sublayer class]), sublayer.contents,
+                                       sublayer.backgroundColor]];
+        }
+        DOTTOLOG(@"applyDotto self=%@ frame=%@ bounds=%@ ivars=[%@] subviews=[%@] siblings=[%@] badgeSublayers=[%@] ancestors=[%@] enabled=%d bg=%@ (%@ frame=%@ img=%@ tint=%@ alpha=%.2f) tv=%@ hidden=%d",
                  self, NSStringFromCGRect(self.frame), NSStringFromCGRect(self.bounds),
                  [ivarNames componentsJoinedByString:@","], [subviews componentsJoinedByString:@","],
+                 [siblings componentsJoinedByString:@","], [badgeSublayers componentsJoinedByString:@","],
                  [ancestors componentsJoinedByString:@","],
                  [dottoPrefs tweakEnabled], backgroundView, NSStringFromClass([backgroundView class]),
                  NSStringFromCGRect([backgroundView frame]), [backgroundView image],
@@ -299,13 +319,20 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
         colour = [colour lighterColor];
     }
     [backgroundView setTintColor:colour];
-    [backgroundView setFrame:CGRectMake(0, 0, 26, 26)];
+    // Render the badge art at its native point size (crisp, no upscaling);
+    // the original stretched the art across a 26pt frame, which pixelates.
+    CGSize artSize = badgeImage.size;
+    if (artSize.width < 1.0 || artSize.height < 1.0) {
+        artSize = CGSizeMake(26, 26);
+    }
+    [backgroundView setFrame:CGRectMake(0, 0, artSize.width, artSize.height)];
     [backgroundView setCenter:CGPointMake(13, 13)];
     [backgroundView setAlpha:[dottoPrefs transparency]];
     [textView setHidden:YES];
-    DOTTOLOG(@"applyDotto DONE bg=%@ frame=%@ img=%@ tint=%@ alpha=%.2f",
+    DOTTOLOG(@"applyDotto DONE bg=%@ frame=%@ img=%@ tint=%@ alpha=%.2f colourBranch=%@",
              backgroundView, NSStringFromCGRect([backgroundView frame]), [backgroundView image],
-             [backgroundView tintColor], [backgroundView alpha]);
+             [backgroundView tintColor], [backgroundView alpha],
+             ([self dottoIsIconFolder] || ![dottoPrefs adaptiveColorEnabled]) ? @"selected" : @"adaptive");
     DottoScheduleReapply();
 }
 
