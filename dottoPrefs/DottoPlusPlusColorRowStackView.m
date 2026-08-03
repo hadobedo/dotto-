@@ -42,11 +42,10 @@ static UIColor *dppSelectedColor;
 
         self.axis = UILayoutConstraintAxisHorizontal;
         self.alignment = UIStackViewAlignmentCenter;
+        // EqualSpacing + pinned edges (in the cell) derives the inter-swatch
+        // gaps from the actual row width — no hardcoded spacing.
+        self.distribution = UIStackViewDistributionEqualSpacing;
         self.hostController = controller;
-
-        CGFloat screenWidth = CGRectGetWidth([UIScreen mainScreen].bounds);
-        // Even gaps with 24pt side margins: (width - 2*24 - 6*30) / 5.
-        self.spacing = (screenWidth - 48.0 - 180.0) / 5.0;
 
         for (UIColor *color in colors) {
             DottoPlusPlusColorItemView *item = [[DottoPlusPlusColorItemView alloc] initWithColor:color

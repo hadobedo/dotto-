@@ -138,7 +138,9 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
 }
 
 - (CGFloat)preferredHeightForWidth:(CGFloat)width {
-    return 174;
+    // Measure the stacked content instead of hardcoding a height.
+    CGSize fit = [_stackView systemLayoutSizeFittingSize:CGSizeMake(width, UILayoutFittingCompressedSize.height)];
+    return fit.height + 4.0 + 4.0;
 }
 
 - (CGFloat)preferredHeightForWidth:(CGFloat)width inTableView:(UITableView *)tableView {

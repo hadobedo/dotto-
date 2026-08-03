@@ -47,7 +47,9 @@ static const double kCellHeight = 90.0;
 
         self.colorStackView = [[UIStackView alloc] init];
         self.colorStackView.axis = UILayoutConstraintAxisVertical;
-        self.colorStackView.alignment = UIStackViewAlignmentCenter;
+        // Fill so the rows stretch to the cell width; the rows' EqualSpacing
+        // distribution then derives the gaps from the actual width.
+        self.colorStackView.alignment = UIStackViewAlignmentFill;
         self.colorStackView.distribution = UIStackViewDistributionFill;
         self.colorStackView.spacing = 10.0;
         self.colorStackView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -56,7 +58,8 @@ static const double kCellHeight = 90.0;
         [self.contentView addSubview:self.colorStackView];
 
         [NSLayoutConstraint activateConstraints:@[
-            [self.colorStackView.centerXAnchor constraintEqualToAnchor:self.contentView.centerXAnchor],
+            [self.colorStackView.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:24],
+            [self.colorStackView.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-24],
             [self.colorStackView.topAnchor constraintEqualToAnchor:self.contentView.topAnchor constant:10],
             [self.colorStackView.bottomAnchor constraintEqualToAnchor:self.contentView.bottomAnchor constant:-10],
             [self.heightAnchor constraintEqualToConstant:kCellHeight],
