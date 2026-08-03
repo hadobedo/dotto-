@@ -22,6 +22,11 @@ libdottoplus_FRAMEWORKS = UIKit CoreGraphics Foundation
 # Theos-built libraries live in the object dir; add it to the linker search path.
 DOTTO_LIB_LDFLAGS = -L$(THEOS_OBJ_DIR)
 
+# The library installs to /usr/local/lib, but the rootless scheme links it via
+# @rpath with default rpaths that skip /usr/local/lib. Add the install path as
+# an rpath on every consumer (prefix resolves to /var/jb on rootless).
+DOTTO_RPATH = -Wl,-rpath,$(THEOS_PACKAGE_INSTALL_PREFIX)/usr/local/lib
+
 # SpringBoard badge tweak.
 TWEAK_NAME = dotto
 dotto_FILES = Tweak.x
@@ -30,7 +35,7 @@ dotto_FRAMEWORKS = UIKit Foundation CoreGraphics
 dotto_LIBRARIES = dottoplus
 # Categories on SpringBoard classes reference their class symbols; resolve at
 # runtime like classic substrate tweaks.
-dotto_LDFLAGS = $(DOTTO_LIB_LDFLAGS) -undefined dynamic_lookup
+dotto_LDFLAGS = $(DOTTO_LIB_LDFLAGS) -undefined dynamic_lookup $(DOTTO_RPATH)
 
 # Settings bundle.
 BUNDLE_NAME = dottoPrefs
@@ -50,7 +55,7 @@ dottoPrefs_LIBRARIES = dottoplus
 # Xcode SDKs do not ship the private Preferences framework; link against the
 # vendored stub (same layout as the pinned theos SDK). jbroot() resolves at
 # runtime from the always-loaded libroothide.
-dottoPrefs_LDFLAGS = $(DOTTO_LIB_LDFLAGS) -F$(THEOS_PROJECT_DIR)/sdks -undefined dynamic_lookup
+dottoPrefs_LDFLAGS = $(DOTTO_LIB_LDFLAGS) -F$(THEOS_PROJECT_DIR)/sdks -undefined dynamic_lookup $(DOTTO_RPATH)
 
 include $(THEOS_MAKE_PATH)/library.mk
 include $(THEOS_MAKE_PATH)/tweak.mk
