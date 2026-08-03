@@ -43,7 +43,7 @@ static NSString *const kAppearanceStyle = @"kAppearanceStyle";
     _optionsStack.spacing = 16;
     _optionsStack.translatesAutoresizingMaskIntoConstraints = NO;
 
-    [_options enumerateObjectsUsingBlock:^(NSDictionary *option, NSUInteger idx, BOOL *stop) {
+    [_options enumerateObjectsUsingBlock:^(NSDictionary *option, NSUInteger idx, BOOL *stop __unused) {
         UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
         button.tag = (NSInteger)idx;
         button.translatesAutoresizingMaskIntoConstraints = NO;
@@ -104,7 +104,7 @@ static NSString *const kAppearanceStyle = @"kAppearanceStyle";
 
 - (void)_refreshSelection {
     NSInteger selected = [[DottoPreferences sharedInstance] appearanceStyle];
-    [_optionButtons enumerateObjectsUsingBlock:^(UIButton *button, NSUInteger idx, BOOL *stop) {
+    [_optionButtons enumerateObjectsUsingBlock:^(UIButton *button, NSUInteger idx, BOOL *stop __unused) {
         UIImageView *checkmark = [button viewWithTag:1001];
         checkmark.tintColor = [UIColor systemBlueColor];
         checkmark.hidden = ((NSInteger)idx != selected);
