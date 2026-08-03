@@ -359,8 +359,9 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon, UIVie
         return;
     }
 
-    NSString *path = ROOT_PATH_NS([dppPrefs appearanceStyle] != 0 ? DottoCircleBadgePath
-                                                                 : DottoNormalBadgePath);
+    NSString *selectedPath = [dppPrefs appearanceStyle] != 0 ? DottoCircleBadgePath
+                                                               : DottoNormalBadgePath;
+    NSString *path = ROOT_PATH_NS(selectedPath);
     NSDictionary *badgeArt = DottoPlusPlusBadgeArt(path);
     UIImage *badgeImage = [badgeArt[@"image"]
                            imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
