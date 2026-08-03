@@ -29,7 +29,8 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
     [NSLayoutConstraint activateConstraints:@[
         [_stackView.topAnchor constraintEqualToAnchor:self.topAnchor constant:4],
         [_stackView.centerXAnchor constraintEqualToAnchor:self.centerXAnchor],
-        [_stackView.widthAnchor constraintLessThanOrEqualToAnchor:self.widthAnchor constant:-32],
+        [_stackView.leadingAnchor constraintEqualToAnchor:self.leadingAnchor constant:16],
+        [_stackView.trailingAnchor constraintEqualToAnchor:self.trailingAnchor constant:-16],
     ]];
 
     // App icon.
@@ -43,23 +44,22 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
     ]];
     [_stackView addArrangedSubview:iconView];
 
-    // Title + subtitle.
-    UILabel *titleLabel = [[UILabel alloc] init];
-    titleLabel.text = @"dotto++";
-    titleLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightSemibold];
-    titleLabel.textColor = [UIColor labelColor];
-    [_stackView addArrangedSubview:titleLabel];
-
-    // Original tweak credit (tappable -> Dynastic archive).
+    // Original tweak credit (tappable -> Dynastic archive). Wraps to a second
+    // line instead of truncating on narrow screens.
     UIButton *originalButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [originalButton setTitle:@"Rootless adaptation of dotto+ by Mirac & ConorTheDev"
                     forState:UIControlStateNormal];
     originalButton.titleLabel.font = [UIFont systemFontOfSize:12];
+    originalButton.titleLabel.numberOfLines = 2;
+    originalButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+    originalButton.titleLabel.textAlignment = NSTextAlignmentCenter;
     [originalButton setImage:[UIImage systemImageNamed:@"chevron.right"] forState:UIControlStateNormal];
     originalButton.semanticContentAttribute = UISemanticContentAttributeForceRightToLeft;
+    originalButton.translatesAutoresizingMaskIntoConstraints = NO;
     [originalButton addTarget:self action:@selector(openOriginal) forControlEvents:UIControlEventTouchUpInside];
     [_stackView addArrangedSubview:originalButton];
-    [originalButton.topAnchor constraintEqualToAnchor:titleLabel.bottomAnchor constant:8].active = YES;
+    [originalButton.leadingAnchor constraintEqualToAnchor:_stackView.leadingAnchor].active = YES;
+    [originalButton.trailingAnchor constraintEqualToAnchor:_stackView.trailingAnchor].active = YES;
 
     UILabel *subtitleLabel = [[UILabel alloc] init];
     subtitleLabel.text = @"by Nick's Works";
@@ -80,7 +80,7 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
     [socialRow addArrangedSubview:[self pillButtonWithTitle:@"YouTube"
                                                     action:@selector(openYouTube)]];
     [_stackView addArrangedSubview:socialRow];
-    [socialRow.topAnchor constraintEqualToAnchor:originalButton.bottomAnchor constant:10].active = YES;
+    [socialRow.topAnchor constraintEqualToAnchor:subtitleLabel.bottomAnchor constant:10].active = YES;
 
     // Source link.
     UIButton *sourceButton = [UIButton buttonWithType:UIButtonTypeSystem];

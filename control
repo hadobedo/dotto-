@@ -1,8 +1,8 @@
 Package: me.conorthedev.dotto+
-Name: dotto+ (iOS 17)
+Name: Dotto++ (iOS 17)
 Version: 1.0.6+ios17.0
 Architecture: iphoneos-arm64e
-Description: Notifications, your style. iOS 17 (Dopamine/rootHide) rebuild of dotto+ 1.0.6 by ConorTheDev & Mirac.
+Description: Notifications, your style. A rootless adaptation of dotto+ 1.0.6 by Mirac & ConorTheDev for iOS 17 (Dopamine/rootHide), rebuilt by Nicks_Works.
 Maintainer: ConorTheDev <conorthedev@gmail.com>
 Author: ConorTheDev & Mirac
 Section: Tweaks
