@@ -224,6 +224,49 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon, UIVie
     UIImageView *backgroundView = [self valueForKey:@"backgroundView"];
     UIImageView *textView = [self valueForKey:@"textView"];
 
+    if (![dppPrefs tweakEnabled]) {
+        // Stock restore: bring back the captured stock background image and the
+        // count text.
+        if (self.dottoPlusPlusStockBackgroundImage) {
+            [backgroundView setImage:self.dottoPlusPlusStockBackgroundImage];
+        }
+        [textView setHidden:NO];
+        [textView setNeedsLayout];
+        [backgroundView setNeedsLayout];
+        return;
+    }
+
+    NSString *selectedPath = [dppPrefs appearanceStyle] != 0 ? DottoCircleBadgePath
+                                                               : DottoNormalBadgePath;
+    NSString *path = ROOT_PATH_NS(selectedPath);
+    NSDictionary *badgeArt = DottoPlusPlusBadgeArt(path);
+    UIImage *badgeImage = [badgeArt[@"image"]
+                           imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+
+    if (!self.dottoPlusPlusStockBackgroundImage) {
+        self.dottoPlusPlusStockBackgroundImage = [backgroundView image];
+    }
+    [backgroundView setImage:badgeImage];
+
+    UIColor *colour;
+    if ([dppPrefs adaptiveColorEnabled] && ![self dottoPlusPlusIsIconFolder]) {
+        colour = [self dottoPlusPlusBadgeColour];
+    } else {
+        colour = [dppPrefs dottoSelectedColour];
+    }
+    if ([dppPrefs pastelColorsEnabled]) {
+        colour = [colour lighterColor];
+    }
+    [backgroundView setTintColor:colour];
+    // Render the badge art at its native point size (crisp, no upscaling).
+    CGSize artSize = badgeImage.size;
+    if (artSize.width < 1.0 || artSize.height < 1.0) {
+        artSize = CGSizeMake(26, 26);
+    }
+    [backgroundView setFrame:CGRectMake(0, 0, artSize.width, artSize.height)];
+    // Art center derived from the asset's own geometry (hangs the dot off the
+    // icon corner, matching the original's effective placement).
+    [backgroundView setCenter:[badgeArt[@"center"] CGPointValue]];
     [backgroundView setAlpha:[dppPrefs transparency]];
     [textView setHidden:YES];
     // Hide any other badge-internal rendering (themed stock pill, incoming
