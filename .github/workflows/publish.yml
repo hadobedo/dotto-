@@ -1,0 +1,187 @@
+name: publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build-release:
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - scheme: roothide
+            archs: "arm64 arm64e"
+            expected_arch: iphoneos-arm64e
+          - scheme: rootless
+            archs: "arm64 arm64e"
+            expected_arch: iphoneos-arm64
+    env:
+      ROOTHIDE_THEOS_COMMIT: 88506b2c22e9e07dd4ed055f23c9e398a117a2c7
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Require release commit from main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --no-tags
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" "origin/main"; then
+            echo "Refusing to publish: $GITHUB_SHA is not contained in origin/main" >&2
+            exit 1
+          fi
+
+      - name: Configure build environment
+        shell: bash
+        run: echo "THEOS=$RUNNER_TEMP/roothide-theos" >> "$GITHUB_ENV"
+
+      - name: Verify release version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag_version="${GITHUB_REF_NAME#v}"
+          version_count=$(awk '$1 == "Version:" { count++ } END { print count + 0 }' control)
+          control_version=$(awk '$1 == "Version:" && NF == 2 { print $2 }' control)
+          test "$version_count" -eq 1
+          test -n "$control_version"
+          test "$tag_version" = "$control_version"
+          printf 'version=%s\n' "$control_version" >> "$GITHUB_OUTPUT"
+
+      - name: Check out pinned RootHide Theos
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --no-checkout https://github.com/roothide/theos.git "$THEOS"
+          git -C "$THEOS" checkout --detach "$ROOTHIDE_THEOS_COMMIT"
+          git -C "$THEOS" submodule update --init --recursive
+          test "$(git -C "$THEOS" rev-parse HEAD)" = "$ROOTHIDE_THEOS_COMMIT"
+
+      - name: Build release package (${{ matrix.scheme }})
+        run: |
+          make clean package FINALPACKAGE=1 \
+            THEOS_PACKAGE_SCHEME=${{ matrix.scheme }} \
+            ARCHS="${{ matrix.archs }}" \
+            PACKAGE_VERSION="${{ steps.version.outputs.version }}"
+
+      - name: Verify package metadata
+        env:
+          EXPECTED_ARCH: ${{ matrix.expected_arch }}
+        run: scripts/verify_package.sh
+
+      - name: Record artifact hashes
+        shell: bash
+        run: |
+          cd packages
+          shasum -a 256 ./*.deb | tee SHA256SUMS
+
+      - name: Upload release package
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: release-${{ matrix.scheme }}
+          path: |
+            packages/*.deb
+            packages/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 30
+
+  publish-repository:
+    needs: build-release
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Download release packages
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          pattern: release-*
+          merge-multiple: false
+
+      - name: Configure repository deploy key
+        shell: bash
+        env:
+          REPO_DEPLOY_KEY: ${{ secrets.REPO_DEPLOY_KEY }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$REPO_DEPLOY_KEY" > "$HOME/.ssh/repo-deploy"
+          chmod 600 "$HOME/.ssh/repo-deploy"
+          ssh-keyscan -H github.com >> "$HOME/.ssh/known_hosts"
+          printf '%s\n' 'Host github.com' >> "$HOME/.ssh/config"
+          printf '%s\n' '  IdentityFile ~/.ssh/repo-deploy' >> "$HOME/.ssh/config"
+          printf '%s\n' '  IdentitiesOnly yes' >> "$HOME/.ssh/config"
+
+      - name: Check out package repository
+        shell: bash
+        run: git clone git@github.com:hadobedo/repo.git feed
+
+      - name: Install repository tools
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y dpkg-dev
+
+      - name: Update package indexes
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p feed/debs feed/rootless/debs feed/roothide/debs
+
+          for scheme in rootless roothide; do
+            artifact="release-$scheme"
+            package=$(find "$artifact" -maxdepth 1 -type f -name '*.deb' -print -quit)
+            test -n "$package"
+            cp "$package" "feed/debs/"
+            cp "$package" "feed/$scheme/debs/"
+            cp "$artifact/SHA256SUMS" "feed/$scheme/SHA256SUMS"
+          done
+
+          write_release() {
+            local directory=$1
+            local architectures=$2
+            local codename=$3
+            local package_file=Packages
+            local compressed_file=Packages.gz
+
+            (
+              cd "$directory"
+              dpkg-scanpackages -m debs /dev/null > Packages
+              gzip -9c Packages > Packages.gz
+              {
+                printf 'Origin: Nicks Works\n'
+                printf 'Label: Nicks Works\n'
+                printf 'Suite: stable\n'
+                printf 'Codename: %s\n' "$codename"
+                printf 'Architectures: %s\n' "$architectures"
+                printf 'Components: main\n'
+                printf 'Description: dotto++ package feed\n'
+                printf 'MD5Sum:\n'
+                md5sum "$package_file" "$compressed_file" | awk '{ printf " %s %s %s\n", $1, "0", $2 }'
+                printf 'SHA256:\n'
+                sha256sum "$package_file" "$compressed_file" | awk '{ printf " %s %s %s\n", $1, "0", $2 }'
+              } > Release
+            )
+          }
+
+          write_release feed 'iphoneos-arm64 iphoneos-arm64e' stable
+          write_release feed/rootless iphoneos-arm64 rootless
+          write_release feed/roothide iphoneos-arm64e roothide
+
+          printf '%s\n' "$version" > feed/LATEST
+
+      - name: Commit and publish package repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          cd feed
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --cached --quiet || git commit -m "Publish dotto++ $version"
+          git push origin main
