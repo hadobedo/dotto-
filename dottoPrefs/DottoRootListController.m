@@ -1,0 +1,65 @@
+#import "DottoRootListController.h"
+
+#import "DottoPrefsCompat.h"
+
+#import <Preferences/PSSpecifier.h>
+
+static NSString *const kEnabled = @"kEnabled";
+static NSString *const kAdaptiveColor = @"kAdaptiveColor";
+
+@implementation DottoRootListController
+
+- (instancetype)init {
+    if ((self = [super init])) {
+        self.preferences = [DottoPreferences sharedInstance];
+        [self.preferences reloadPreferences];
+
+        UISwitch *enabledSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(0, 0, 51, 30)];
+        [enabledSwitch setOn:[self.preferences tweakEnabled] animated:NO];
+        [enabledSwitch addTarget:self action:@selector(switchToggled:)
+                forControlEvents:UIControlEventValueChanged];
+        self.navigationItem.rightBarButtonItem =
+            [[UIBarButtonItem alloc] initWithCustomView:enabledSwitch];
+    }
+    return self;
+}
+
+- (NSArray *)specifiers {
+    if (!_specifiers) {
+        _specifiers = [self loadSpecifiersFromPlistName:@"Root" target:self];
+    }
+    return _specifiers;
+}
+
+- (void)switchToggled:(UISwitch *)sender {
+    [self.preferences writeValue:@([sender isOn]) forKey:kEnabled];
+}
+
+- (void)setCellForRowAtIndexPath:(NSIndexPath *)indexPath enabled:(BOOL)enabled {
+    UITableView *table = [self table];
+    UITableViewCell *cell = [self tableView:table cellForRowAtIndexPath:indexPath];
+    if (!cell) {
+        return;
+    }
+    [cell setUserInteractionEnabled:enabled];
+    [cell.contentView setAlpha:enabled ? 1.0 : 0.439216];
+}
+
+- (void)setPreferenceValue:(id)value specifier:(PSSpecifier *)specifier {
+    if ([[specifier propertyForKey:@"key"] isEqualToString:kAdaptiveColor]) {
+        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:2 inSection:0];
+        [self setCellForRowAtIndexPath:indexPath enabled:![value boolValue]];
+    }
+    [super setPreferenceValue:value specifier:specifier];
+}
+
+- (id)readPreferenceValue:(PSSpecifier *)specifier {
+    if ([[specifier propertyForKey:@"key"] isEqualToString:kAdaptiveColor]) {
+        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:2 inSection:0];
+        [self setCellForRowAtIndexPath:indexPath
+                               enabled:![self.preferences adaptiveColorEnabled]];
+    }
+    return [super readPreferenceValue:specifier];
+}
+
+@end

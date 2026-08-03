@@ -1,0 +1,6 @@
+.theos/
+packages/
+deb_work/
+ghidra/
+.DS_Store
+me.conorthedev.dotto.deb
