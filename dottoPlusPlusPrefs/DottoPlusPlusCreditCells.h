@@ -10,3 +10,8 @@
 // author subtitle, chevron.
 @interface DottoPlusPlusOriginalLinkCell : PSTableCell
 @end
+
+// Generic blue subtitle link row (title + footnote subtitle + icon + chevron),
+// used for the Ko-fi cell in the Links subview.
+@interface DottoPlusPlusSubtitleLinkCell : PSTableCell
+@end

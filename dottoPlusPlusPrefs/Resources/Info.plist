@@ -3,7 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>English</string>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ar</string>
+		<string>zh-Hans</string>
+		<string>zh-Hant</string>
+		<string>es</string>
+		<string>ru</string>
+		<string>ja</string>
+		<string>ko</string>
+		<string>pt-BR</string>
+		<string>vi</string>
+		<string>tr</string>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>dottoPlusPlusPrefs</string>
 	<key>CFBundleIdentifier</key>

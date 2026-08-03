@@ -74,3 +74,27 @@ jobs:
             packages/SHA256SUMS
           if-no-files-found: error
           retention-days: 14
+
+  publish-dev:
+    # Development branch pushes go straight to the dev repo; main is for
+    # releases (tagged, published separately).
+    if: github.ref == 'refs/heads/development'
+    needs: build-and-package
+    runs-on: ubuntu-latest
+    env:
+      REPO_DEPLOY_KEY: ${{ secrets.REPO_DEPLOY_KEY }}
+    steps:
+      - name: Check out dotto17
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Download built packages
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          pattern: dottoplusplus-*-debug
+          merge-multiple: true
+          path: packages
+
+      - name: Publish to dev repo
+        run: |
+          DEBS="$(ls packages/*.deb | tr '\n' ' ')" \
+          scripts/publish_repo.sh

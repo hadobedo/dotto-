@@ -1,4 +1,4 @@
-TARGET := iphone:clang:latest:17.0
+TARGET := iphone:clang:latest:15.0
 # Scheme defaults to roothide (Dopamine/rootHide); build legacy rootless with
 #   make clean package THEOS_PACKAGE_SCHEME=rootless ARCHS="arm64 arm64e"
 THEOS_PACKAGE_SCHEME ?= roothide

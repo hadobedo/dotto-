@@ -128,6 +128,8 @@
 			<string>DottoPlusPlusLinksListController</string>
 			<key>label</key>
 			<string>Nick's Works</string>
+			<key>subtitle</key>
+			<string>💡 Have a tweak request/idea? Tap here!</string>
 			<key>key</key>
 			<string>kByRow</string>
 		</dict>

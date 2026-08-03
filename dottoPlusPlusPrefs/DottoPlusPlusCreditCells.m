@@ -5,14 +5,39 @@
 - (instancetype)initWithStyle:(UITableViewCellStyle)style
               reuseIdentifier:(NSString *)reuseIdentifier
                     specifier:(PSSpecifier *)specifier {
-    if ((self = [super initWithStyle:UITableViewCellStyleDefault
+    if ((self = [super initWithStyle:UITableViewCellStyleSubtitle
                      reuseIdentifier:reuseIdentifier
                            specifier:specifier])) {
         // Icon comes from the specifier's PSIconImageKey (native path).
-        // Blue signals tappability, matching the link row.
         self.imageView.tintColor = [UIColor systemBlueColor];
         self.imageView.contentMode = UIViewContentModeScaleAspectFit;
         self.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+        self.detailTextLabel.text = [specifier propertyForKey:@"subtitle"];
+        self.detailTextLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleFootnote];
+        self.detailTextLabel.textColor = [UIColor secondaryLabelColor];
+        self.detailTextLabel.numberOfLines = 2;
+    }
+    return self;
+}
+
+@end
+
+@implementation DottoPlusPlusSubtitleLinkCell
+
+- (instancetype)initWithStyle:(UITableViewCellStyle)style
+              reuseIdentifier:(NSString *)reuseIdentifier
+                    specifier:(PSSpecifier *)specifier {
+    if ((self = [super initWithStyle:UITableViewCellStyleSubtitle
+                     reuseIdentifier:reuseIdentifier
+                           specifier:specifier])) {
+        self.textLabel.textColor = [UIColor systemBlueColor];
+        self.imageView.tintColor = [UIColor systemBlueColor];
+        self.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        self.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+        self.detailTextLabel.text = [specifier propertyForKey:@"subtitle"];
+        self.detailTextLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleFootnote];
+        self.detailTextLabel.textColor = [UIColor secondaryLabelColor];
+        self.detailTextLabel.numberOfLines = 2;
     }
     return self;
 }

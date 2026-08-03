@@ -1,5 +1,6 @@
 #import "DottoPlusPlusRootListController.h"
 
+#import "DottoPlusPlusLocalization.h"
 #import "DottoPrefsCompat.h"
 
 #import <Preferences/PSSpecifier.h>
@@ -39,10 +40,11 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
     if (!_specifiers) {
         _specifiers = [self loadSpecifiersFromPlistName:@"Root" target:self];
         for (PSSpecifier *specifier in _specifiers) {
+            [self localizeSpecifier:specifier];
             NSString *key = [specifier propertyForKey:@"key"];
             if ([key isEqualToString:@"kByRow"]) {
                 [specifier setProperty:[self symbolImageNamed:@"person.crop.circle"
-                                                        color:[UIColor labelColor]]
+                                                        color:[UIColor systemBlueColor]]
                                 forKey:PSIconImageKey];
             } else if ([key isEqualToString:@"kOriginalLink"]) {
                 [specifier setProperty:[self symbolImageNamed:@"link"
@@ -52,6 +54,23 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
         }
     }
     return _specifiers;
+}
+
+// Replace plist-driven labels with the bundle's localized strings. Group
+// headers/footers and row subtitles ride along as specifier properties.
+- (void)localizeSpecifier:(PSSpecifier *)specifier {
+    NSString *name = [specifier name];
+    if (name.length > 0) {
+        [specifier setName:DottoL(name)];
+    }
+    NSString *subtitle = [specifier propertyForKey:@"subtitle"];
+    if (subtitle.length > 0) {
+        [specifier setProperty:DottoL(subtitle) forKey:@"subtitle"];
+    }
+    NSString *footer = [specifier propertyForKey:PSFooterTextGroupKey];
+    if (footer.length > 0) {
+        [specifier setProperty:DottoL(footer) forKey:PSFooterTextGroupKey];
+    }
 }
 
 - (UIImage *)symbolImageNamed:(NSString *)name color:(UIColor *)color {
