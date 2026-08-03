@@ -160,6 +160,17 @@ static void DottoPlusPlusScheduleReapply(void) {
     });
 }
 
+
+// The badge view's center is derived from the icon width: the original shipped
+// (58, 2) for 60pt icons == (iconWidth - 2, 2). Keeping it relative reproduces
+// the hang-off-the-corner look on larger icons too (e.g. iPad 76pt icons).
+static CGPoint DottoPlusPlusBadgeCenterForIconWidth(CGFloat iconWidth) {
+    if (iconWidth <= 0.0) {
+        return CGPointMake(58, 2); // original fallback
+    }
+    return CGPointMake(iconWidth - 2.0, 2.0);
+}
+
 static void DottoPlusPlusUpdateBadges(CFNotificationCenterRef center __unused,
                               void *observer __unused,
                               CFStringRef name __unused,
@@ -450,7 +461,7 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon, UIVie
 
 - (CGPoint)center {
     if ([dppPrefs tweakEnabled]) {
-        return CGPointMake(58, 2);
+        return DottoPlusPlusBadgeCenterForIconWidth(CGRectGetWidth(self.superview.bounds));
     }
     return %orig;
 }
@@ -529,7 +540,7 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon, UIVie
 // _centerForAccessoryView on older iOS.
 - (CGPoint)accessoryCenterForIconBounds:(CGRect)iconBounds {
     if ([dppPrefs tweakEnabled]) {
-        return CGPointMake(58, 2);
+        return DottoPlusPlusBadgeCenterForIconWidth(CGRectGetWidth(iconBounds));
     }
     return %orig;
 }
@@ -540,7 +551,7 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon, UIVie
 
 - (CGPoint)_centerForAccessoryView {
     if ([dppPrefs tweakEnabled]) {
-        return CGPointMake(58, 2);
+        return DottoPlusPlusBadgeCenterForIconWidth(CGRectGetWidth(self.bounds));
     }
     return %orig;
 }
