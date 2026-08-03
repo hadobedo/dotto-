@@ -12,7 +12,7 @@ include $(THEOS)/makefiles/common.mk
 
 # Shared support library: preferences + color math (mirrors libdottoplus.dylib).
 LIBRARY_NAME = libdottoplus
-libdottoplus_FILES = libdottoplus/DottoPreferences.m libdottoplus/RGBPixel.m libdottoplus/UIColor+dotto.m
+libdottoplus_FILES = libdottoplus/DottoPlusPlusPreferences.m libdottoplus/RGBPixel.m libdottoplus/UIColor+dottoPlusPlus.m
 libdottoplus_INSTALL_PATH = /usr/local/lib
 libdottoplus_CFLAGS = -fobjc-arc -Wall -Wextra -Werror -Ilibdottoplus
 libdottoplus_FRAMEWORKS = UIKit CoreGraphics Foundation
@@ -32,11 +32,12 @@ dotto_LDFLAGS = $(DOTTO_LIB_LDFLAGS) -undefined dynamic_lookup
 
 # Settings bundle.
 BUNDLE_NAME = dottoPrefs
-dottoPrefs_FILES = dottoPrefs/DottoRootListController.m \
-	dottoPrefs/DottoAppearanceSelectionTableCell.m \
-	dottoPrefs/DottoColorSelectionTableCell.m \
-	dottoPrefs/DottoColorRowStackView.m \
-	dottoPrefs/DottoColorItemView.m
+dottoPrefs_FILES = dottoPrefs/DottoPlusPlusRootListController.m \
+	dottoPrefs/DottoPlusPlusAppearanceSelectionTableCell.m \
+	dottoPrefs/DottoPlusPlusColorSelectionTableCell.m \
+	dottoPrefs/DottoPlusPlusColorRowStackView.m \
+	dottoPrefs/DottoPlusPlusColorItemView.m \
+	dottoPrefs/DottoPlusPlusCreditsFooterView.m
 dottoPrefs_INSTALL_PATH = /Library/PreferenceBundles
 # Bundle resources (Info.plist, Root.plist, images) live in dottoPrefs/Resources.
 dottoPrefs_RESOURCE_DIRS = dottoPrefs/Resources

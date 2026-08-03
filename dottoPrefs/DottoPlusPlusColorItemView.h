@@ -1,18 +1,18 @@
 #import <UIKit/UIKit.h>
 #import <UIKit/UIColorPickerViewController.h>
 
-#import "DottoPreferences.h"
+#import "DottoPlusPlusPreferences.h"
 
-@class DottoColorRowStackView;
+@class DottoPlusPlusColorRowStackView;
 
 // 30x30 rounded color swatch with selection outline and tap handling.
-@interface DottoColorItemView : UIView <UIColorPickerViewControllerDelegate>
+@interface DottoPlusPlusColorItemView : UIView <UIColorPickerViewControllerDelegate>
 
 @property (nonatomic, strong) UIColor *color;
 @property (nonatomic, strong) UITapGestureRecognizer *tapGestureRecognizer;
-@property (nonatomic, strong) DottoPreferences *preferences;
+@property (nonatomic, strong) DottoPlusPlusPreferences *preferences;
 @property (nonatomic, strong) UIView *outlineView;
-@property (nonatomic, weak) DottoColorRowStackView *hostController;
+@property (nonatomic, weak) DottoPlusPlusColorRowStackView *hostController;
 // 0 = standard color swatch, 1 = custom color picker swatch.
 @property (nonatomic, assign) NSInteger type;
 

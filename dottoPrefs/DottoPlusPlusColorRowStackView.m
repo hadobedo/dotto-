@@ -1,23 +1,23 @@
-#import "DottoColorRowStackView.h"
+#import "DottoPlusPlusColorRowStackView.h"
 
-#import "DottoColorItemView.h"
-#import "DottoColorSelectionTableCell.h"
+#import "DottoPlusPlusColorItemView.h"
+#import "DottoPlusPlusColorSelectionTableCell.h"
 
-static NSArray<UIColor *> *dottoStandardColors;
-static UIColor *dottoSelectedColor;
+static NSArray<UIColor *> *dppStandardColors;
+static UIColor *dppSelectedColor;
 
-@implementation DottoColorRowStackView
+@implementation DottoPlusPlusColorRowStackView
 
 + (NSArray<UIColor *> *)standardColors {
-    return dottoStandardColors;
+    return dppStandardColors;
 }
 
 + (UIColor *)selectedColor {
-    return dottoSelectedColor;
+    return dppSelectedColor;
 }
 
 + (void)setSelectedColor:(UIColor *)color {
-    dottoSelectedColor = color;
+    dppSelectedColor = color;
 }
 
 - (instancetype)initWithColors:(NSArray<UIColor *> *)colors forController:(id)controller {
@@ -26,7 +26,7 @@ static UIColor *dottoSelectedColor;
 
         // The 11 standard colors (original __const table: iOS system palette +
         // white + dark gray). Shared globally; both rows contribute.
-        dottoStandardColors = @[
+        dppStandardColors = @[
             [UIColor colorWithRed:232.0 / 255.0 green:53.0 / 255.0 blue:83.0 / 255.0 alpha:1.0],  // #E83553
             [UIColor colorWithRed:255.0 / 255.0 green:59.0 / 255.0 blue:48.0 / 255.0 alpha:1.0],  // #FF3B30
             [UIColor colorWithRed:255.0 / 255.0 green:149.0 / 255.0 blue:0.0 / 255.0 alpha:1.0],  // #FF9500
@@ -45,10 +45,11 @@ static UIColor *dottoSelectedColor;
         self.hostController = controller;
 
         CGFloat screenWidth = CGRectGetWidth([UIScreen mainScreen].bounds);
-        self.spacing = screenWidth / 6.0 - 30.0;
+        // Even gaps with 16pt side margins: (width - 2*16 - 6*30) / 5.
+        self.spacing = (screenWidth - 32.0 - 180.0) / 5.0;
 
         for (UIColor *color in colors) {
-            DottoColorItemView *item = [[DottoColorItemView alloc] initWithColor:color
+            DottoPlusPlusColorItemView *item = [[DottoPlusPlusColorItemView alloc] initWithColor:color
                                                                    forController:self];
             [NSLayoutConstraint activateConstraints:@[
                 [item.widthAnchor constraintEqualToConstant:30],

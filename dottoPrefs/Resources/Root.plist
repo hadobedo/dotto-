@@ -14,7 +14,7 @@
             <key>cell</key>
             <string>PSDefaultCell</string>
             <key>cellClass</key>
-            <string>DottoAppearanceSelectionTableCell</string>
+            <string>DottoPlusPlusAppearanceSelectionTableCell</string>
             <key>options</key>
             <array>
                 <dict>
@@ -49,7 +49,7 @@
             <key>cell</key>
             <string>PSDefaultCell</string>
             <key>cellClass</key>
-            <string>DottoColorSelectionTableCell</string>
+            <string>DottoPlusPlusColorSelectionTableCell</string>
 			<key>height</key>
     		<integer>90</integer>
         </dict>
@@ -108,8 +108,8 @@
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
-			<key>footerText</key>
-			<string>Made with ❤️ by ConorTheDev and Mirac&#xA;A respring is recommended after disabling</string>
+			<key>footerViewClass</key>
+			<string>DottoPlusPlusCreditsFooterView</string>
 			<key>footerAlignment</key>
 			<integer>1</integer>
 		</dict>

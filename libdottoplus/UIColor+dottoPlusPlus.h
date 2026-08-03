@@ -3,7 +3,7 @@
 #import "RGBPixel.h"
 
 // Faithful ports of the original libdottoplus color categories.
-@interface UIColor (dotto)
+@interface UIColor (dottoPlusPlus)
 
 - (UIColor *)lighterColor;
 - (UIColor *)darkerColor;
@@ -11,7 +11,7 @@
 
 @end
 
-@interface UIImage (dotto)
+@interface UIImage (dottoPlusPlus)
 
 - (UIColor *)dottoAverageColor;
 - (int)dottoColourDistance:(RGBPixel *)pixelA andB:(RGBPixel *)pixelB;

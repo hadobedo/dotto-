@@ -1,14 +1,14 @@
-#import "DottoColorSelectionTableCell.h"
+#import "DottoPlusPlusColorSelectionTableCell.h"
 
-#import "DottoColorItemView.h"
-#import "DottoColorRowStackView.h"
+#import "DottoPlusPlusColorItemView.h"
+#import "DottoPlusPlusColorRowStackView.h"
 #import "DottoPrefsCompat.h"
 
 #import <Preferences/PSSpecifier.h>
 
 static const double kCellHeight = 90.0;
 
-@implementation DottoColorSelectionTableCell
+@implementation DottoPlusPlusColorSelectionTableCell
 
 - (instancetype)initWithSpecifier:(PSSpecifier *)specifier {
     return [self initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil specifier:specifier];
@@ -18,7 +18,7 @@ static const double kCellHeight = 90.0;
               reuseIdentifier:(NSString *)reuseIdentifier
                     specifier:(PSSpecifier *)specifier {
     if ((self = [super initWithStyle:style reuseIdentifier:reuseIdentifier specifier:specifier])) {
-        self.preferences = [DottoPreferences sharedInstance];
+        self.preferences = [DottoPlusPlusPreferences sharedInstance];
         [self.preferences reloadPreferences];
 
         // First row: 6 colors.
@@ -30,7 +30,7 @@ static const double kCellHeight = 90.0;
             [UIColor colorWithRed:52.0 / 255.0 green:199.0 / 255.0 blue:89.0 / 255.0 alpha:1.0],  // #34C759
             [UIColor colorWithRed:90.0 / 255.0 green:200.0 / 255.0 blue:250.0 / 255.0 alpha:1.0], // #5AC8FA
         ];
-        self.firstColorRow = [[DottoColorRowStackView alloc] initWithColors:firstRowColors
+        self.firstColorRow = [[DottoPlusPlusColorRowStackView alloc] initWithColors:firstRowColors
                                                               forController:self];
 
         // Second row: 5 colors + custom color picker (clear swatch).
@@ -42,7 +42,7 @@ static const double kCellHeight = 90.0;
             [UIColor colorWithRed:17.0 / 255.0 green:17.0 / 255.0 blue:17.0 / 255.0 alpha:1.0],   // #111111
             [UIColor clearColor],
         ];
-        self.secondColorRow = [[DottoColorRowStackView alloc] initWithColors:secondRowColors
+        self.secondColorRow = [[DottoPlusPlusColorRowStackView alloc] initWithColors:secondRowColors
                                                                forController:self];
 
         self.colorStackView = [[UIStackView alloc] init];
@@ -57,7 +57,8 @@ static const double kCellHeight = 90.0;
 
         [NSLayoutConstraint activateConstraints:@[
             [self.colorStackView.centerXAnchor constraintEqualToAnchor:self.contentView.centerXAnchor],
-            [self.colorStackView.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor],
+            [self.colorStackView.topAnchor constraintEqualToAnchor:self.contentView.topAnchor constant:10],
+            [self.colorStackView.bottomAnchor constraintEqualToAnchor:self.contentView.bottomAnchor constant:-10],
             [self.heightAnchor constraintEqualToConstant:kCellHeight],
         ]];
     }
@@ -65,13 +66,13 @@ static const double kCellHeight = 90.0;
 }
 
 - (void)updateCircles {
-    NSArray<DottoColorItemView *> *items = [self.firstColorRow.arrangedSubviews
+    NSArray<DottoPlusPlusColorItemView *> *items = [self.firstColorRow.arrangedSubviews
                                             arrayByAddingObjectsFromArray:self.secondColorRow.arrangedSubviews];
-    UIColor *selectedColour = [DottoColorRowStackView selectedColor];
-    for (DottoColorItemView *item in items) {
+    UIColor *selectedColour = [DottoPlusPlusColorRowStackView selectedColor];
+    for (DottoPlusPlusColorItemView *item in items) {
         if (item.type == 1) {
             // Custom picker swatch: outlined when the selection is a custom color.
-            if (![[DottoColorRowStackView standardColors] containsObject:selectedColour]) {
+            if (![[DottoPlusPlusColorRowStackView standardColors] containsObject:selectedColour]) {
                 if (![item.subviews containsObject:item.outlineView]) {
                     [item addOutlineView];
                 }

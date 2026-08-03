@@ -4,10 +4,10 @@ iOS 17 (Dopamine/rootHide, roothide scheme) rebuild of **dotto+ 1.0.6**
 by ConorTheDev & Mirac — notification badges, your style: circle or rounded
 badges tinted with a selected or icon-adaptive color, no text.
 
-This repository contains a complete **decompilation analysis** (`ANALYSIS.md`)
-of the original 2020 binary and a from-scratch reimplementation targeting
-iOS 17.1 / iPhone arm64e / RootHide with ElleKit. It is built with the same
-pinned RootHide Theos fork and CI flow as [nuGriddy](https://github.com/hadobedo/nuGriddy).
+This is a from-scratch reimplementation (internal codename **DottoPlusPlus**)
+of the original 2020 binary, targeting iOS 17.1 / iPhone arm64e / RootHide with
+ElleKit. It is built with the same pinned RootHide Theos fork and CI flow as
+[nuGriddy](https://github.com/hadobedo/nuGriddy).
 
 ## Features (rebuilt)
 
@@ -59,7 +59,7 @@ safe mode.
 
 ## iOS 17 changes vs the original
 
-See `ANALYSIS.md` §4 for the full compatibility audit. Summary:
+Summary:
 
 - MobileSubstrate → **ElleKit**; package scheme **roothide**, arm64e.
 - `CFPreferences` → `NSUserDefaults` suite (same domain/plist).
@@ -74,6 +74,10 @@ See `ANALYSIS.md` §4 for the full compatibility audit. Summary:
 
 ## Acknowledgements
 
-- ConorTheDev & Mirac for the original dotto+ (badge art and concept).
+- ConorTheDev & Mirac for the original dotto+ (badge art and concept) —
+  [Dynastic archive](https://repo.dynastic.co/dotto),
+  [Mirac](https://twitter.com/thatmirac), [ConorTheDev](https://github.com/ConorTheDev).
 - MTACS iOS-17-Runtime-Headers dump (iOS 17.1) for selector verification.
 - RootHide's Theos fork and documentation.
+- Rebuild by [Nicks_Works](https://twitter.com/Nicks_Works) —
+  [Instagram](https://instagram.com/Nicks_Works) · [YouTube](https://www.youtube.com/@NicksWorks).

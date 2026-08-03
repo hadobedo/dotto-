@@ -1,6 +1,6 @@
-#import "DottoColorItemView.h"
+#import "DottoPlusPlusColorItemView.h"
 
-#import "DottoColorRowStackView.h"
+#import "DottoPlusPlusColorRowStackView.h"
 
 #import <roothide.h>
 #import <UIKit/UIColorPickerViewController.h>
@@ -12,7 +12,7 @@ static NSString *const kColourPickerImagePath =
 
 // Native replacement for libcolorpicker's hexFromColor:/LCPParseColorString:
 // round-trips a color through #RRGGBB so dynamic/system colors become concrete.
-static NSString *DottoHexStringFromColor(UIColor *color) {
+static NSString *DottoPlusPlusHexStringFromColor(UIColor *color) {
     CGFloat red, green, blue, alpha;
     if (![color getRed:&red green:&green blue:&blue alpha:&alpha]) {
         return nil;
@@ -21,7 +21,7 @@ static NSString *DottoHexStringFromColor(UIColor *color) {
             (int)lround(red * 255.0), (int)lround(green * 255.0), (int)lround(blue * 255.0)];
 }
 
-static UIColor *DottoColorFromHexString(NSString *hexString) {
+static UIColor *DottoPlusPlusColorFromHexString(NSString *hexString) {
     NSString *hex = [hexString stringByTrimmingCharactersInSet:
                      [NSCharacterSet whitespaceAndNewlineCharacterSet]];
     if ([hex hasPrefix:@"#"]) {
@@ -41,14 +41,14 @@ static UIColor *DottoColorFromHexString(NSString *hexString) {
                            alpha:1.0];
 }
 
-@implementation DottoColorItemView
+@implementation DottoPlusPlusColorItemView
 
 - (instancetype)initWithColor:(UIColor *)color forController:(id)controller {
     if ((self = [super initWithFrame:CGRectMake(0, 0, 30, 30)])) {
         self.hostController = controller;
         self.layer.cornerRadius = 15.0;
 
-        self.preferences = [DottoPreferences sharedInstance];
+        self.preferences = [DottoPlusPlusPreferences sharedInstance];
         [self.preferences reloadPreferences];
         UIColor *selectedColour = [self.preferences dottoSelectedColour];
 
@@ -84,7 +84,7 @@ static UIColor *DottoColorFromHexString(NSString *hexString) {
                                          initWithTarget:self action:@selector(showColorPicker:)];
             [self addGestureRecognizer:self.tapGestureRecognizer];
 
-            if (![[DottoColorRowStackView standardColors] containsObject:selectedColour]) {
+            if (![[DottoPlusPlusColorRowStackView standardColors] containsObject:selectedColour]) {
                 [self addOutlineView];
             } else {
                 [self.outlineView removeFromSuperview];
@@ -116,7 +116,7 @@ static UIColor *DottoColorFromHexString(NSString *hexString) {
     NSData *archivedColour = [NSKeyedArchiver archivedDataWithRootObject:self.color
                                                   requiringSecureCoding:NO error:NULL];
     [self.preferences writeValue:archivedColour forKey:kSelectedColor];
-    [DottoColorRowStackView setSelectedColor:self.color];
+    [DottoPlusPlusColorRowStackView setSelectedColor:self.color];
     [self.hostController updateCircles];
 }
 
@@ -153,12 +153,12 @@ static UIColor *DottoColorFromHexString(NSString *hexString) {
 
 - (void)didApplyiOS14ColorPicker:(UIColorPickerViewController *)viewController {
     UIColor *pickedColor = viewController.selectedColor;
-    NSString *hex = DottoHexStringFromColor(pickedColor);
-    UIColor *normalized = hex ? DottoColorFromHexString(hex) : pickedColor;
+    NSString *hex = DottoPlusPlusHexStringFromColor(pickedColor);
+    UIColor *normalized = hex ? DottoPlusPlusColorFromHexString(hex) : pickedColor;
     NSData *archivedColour = [NSKeyedArchiver archivedDataWithRootObject:normalized
                                                   requiringSecureCoding:NO error:NULL];
     [self.preferences writeValue:archivedColour forKey:kSelectedColor];
-    [DottoColorRowStackView setSelectedColor:pickedColor];
+    [DottoPlusPlusColorRowStackView setSelectedColor:pickedColor];
     [self.hostController updateCircles];
 }
 

@@ -1,8 +1,8 @@
-#import "DottoAppearanceSelectionTableCell.h"
+#import "DottoPlusPlusAppearanceSelectionTableCell.h"
 
 #import <Preferences/PSSpecifier.h>
 
-#import "DottoPreferences.h"
+#import "DottoPlusPlusPreferences.h"
 
 static NSString *const kAppearanceStyle = @"kAppearanceStyle";
 
@@ -11,10 +11,10 @@ static NSString *const kAppearanceStyle = @"kAppearanceStyle";
 // examples, 17pt captions, circle checkmark, haptics, direct pref write.
 @interface DottoAppearanceTypeStackView : UIStackView
 @property (nonatomic, assign) NSInteger type;
-@property (nonatomic, weak) DottoAppearanceSelectionTableCell *hostController;
+@property (nonatomic, weak) DottoPlusPlusAppearanceSelectionTableCell *hostController;
 @property (nonatomic, strong) UIButton *checkmarkButton;
 - (instancetype)initWithType:(NSInteger)type
-               forController:(DottoAppearanceSelectionTableCell *)controller
+               forController:(DottoPlusPlusAppearanceSelectionTableCell *)controller
                    withImage:(UIImage *)image
                      andText:(NSString *)text;
 @end
@@ -22,7 +22,7 @@ static NSString *const kAppearanceStyle = @"kAppearanceStyle";
 @implementation DottoAppearanceTypeStackView
 
 - (instancetype)initWithType:(NSInteger)type
-               forController:(DottoAppearanceSelectionTableCell *)controller
+               forController:(DottoPlusPlusAppearanceSelectionTableCell *)controller
                    withImage:(UIImage *)image
                      andText:(NSString *)text {
     if ((self = [super init])) {
@@ -106,13 +106,13 @@ static NSString *const kAppearanceStyle = @"kAppearanceStyle";
     UIImpactFeedbackGenerator *feedback = [[UIImpactFeedbackGenerator alloc]
                                            initWithStyle:UIImpactFeedbackStyleMedium];
     [feedback impactOccurred];
-    [[DottoPreferences sharedInstance] writeValue:@(self.type) forKey:kAppearanceStyle];
+    [[DottoPlusPlusPreferences sharedInstance] writeValue:@(self.type) forKey:kAppearanceStyle];
     [self.hostController updateForType:self.type];
 }
 
 @end
 
-@implementation DottoAppearanceSelectionTableCell {
+@implementation DottoPlusPlusAppearanceSelectionTableCell {
     UIStackView *_containerStackView;
 }
 
@@ -161,7 +161,7 @@ static NSString *const kAppearanceStyle = @"kAppearanceStyle";
         [_containerStackView.centerXAnchor constraintEqualToAnchor:self.centerXAnchor].active = YES;
         [_containerStackView.centerYAnchor constraintEqualToAnchor:self.centerYAnchor].active = YES;
 
-        [self updateForType:(NSInteger)[[DottoPreferences sharedInstance] appearanceStyle]];
+        [self updateForType:(NSInteger)[[DottoPlusPlusPreferences sharedInstance] appearanceStyle]];
     }
     return self;
 }

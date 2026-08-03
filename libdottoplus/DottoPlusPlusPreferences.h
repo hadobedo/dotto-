@@ -1,9 +1,9 @@
 #import <UIKit/UIKit.h>
 
-// Drop-in replacement for the original libdottoplus DottoPreferences singleton.
+// Drop-in replacement for the original libdottoplus DottoPlusPlusPreferences singleton.
 // Storage: NSUserDefaults suite "me.conorthedev.dotto.prefs" (same domain/plist as
 // the original CFPreferences plumbing, via cfprefsd).
-@interface DottoPreferences : NSObject
+@interface DottoPlusPlusPreferences : NSObject
 
 @property (nonatomic, strong) NSDictionary *preferences;
 

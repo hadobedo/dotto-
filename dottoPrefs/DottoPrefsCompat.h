@@ -6,6 +6,6 @@
 // -Wincomplete-implementation). All are real Preferences.framework methods.
 // NOTE: setYellowTaps: was removed from PSTableCell on modern iOS — do not use it.
 
-@interface PSListController (Dotto17Compat)
+@interface PSListController (DottoPlusPlusCompat)
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath;
 @end

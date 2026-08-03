@@ -1,9 +1,9 @@
-#import "UIColor+dotto.h"
+#import "UIColor+dottoPlusPlus.h"
 
 #import <CoreGraphics/CoreGraphics.h>
 #import <math.h>
 
-@implementation UIColor (dotto)
+@implementation UIColor (dottoPlusPlus)
 
 - (UIColor *)lighterColor {
     CGFloat hue, saturation, brightness, alpha;
@@ -36,7 +36,7 @@
 
 @end
 
-@implementation UIImage (dotto)
+@implementation UIImage (dottoPlusPlus)
 
 - (int)dottoColourDistance:(RGBPixel *)pixelA andB:(RGBPixel *)pixelB {
     int dr = pixelA.r - pixelB.r;

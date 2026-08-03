@@ -1,4 +1,4 @@
-#import "DottoPreferences.h"
+#import "DottoPlusPlusPreferences.h"
 
 static NSString *const DottoPrefsSuite = @"me.conorthedev.dotto.prefs";
 static NSString *const DottoReloadNotification = @"me.conorthedev.dotto/ReloadPrefs";
@@ -10,10 +10,10 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
 static NSString *const kTransparency = @"kTransparency";
 static NSString *const kUsePastelColor = @"kUsePastelColor";
 
-@implementation DottoPreferences
+@implementation DottoPlusPlusPreferences
 
 + (instancetype)sharedInstance {
-    static DottoPreferences *sharedInstance = nil;
+    static DottoPlusPlusPreferences *sharedInstance = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         sharedInstance = [[self alloc] init];

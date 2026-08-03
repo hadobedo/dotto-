@@ -1,4 +1,4 @@
-#import "DottoRootListController.h"
+#import "DottoPlusPlusRootListController.h"
 
 #import "DottoPrefsCompat.h"
 
@@ -7,11 +7,11 @@
 static NSString *const kEnabled = @"kEnabled";
 static NSString *const kAdaptiveColor = @"kAdaptiveColor";
 
-@implementation DottoRootListController
+@implementation DottoPlusPlusRootListController
 
 - (instancetype)init {
     if ((self = [super init])) {
-        self.preferences = [DottoPreferences sharedInstance];
+        self.preferences = [DottoPlusPlusPreferences sharedInstance];
         [self.preferences reloadPreferences];
 
         UISwitch *enabledSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(0, 0, 51, 30)];
