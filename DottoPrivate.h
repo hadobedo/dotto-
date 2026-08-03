@@ -14,6 +14,7 @@ struct SBIconImageInfo {
 
 @interface SBIcon : NSObject
 @property (nonatomic, readonly, copy) NSString *uniqueIdentifier;
+@property (nonatomic, readonly) long long badgeValue;
 - (UIImage *)iconImageWithInfo:(struct SBIconImageInfo)info;
 @end
 

@@ -200,10 +200,10 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
 // colour is used. Folders average the dominant colours of the apps inside them
 // (their own contentsImage is nil on iOS 17).
 
-// Average colour for a folder badge: run the dominant-colour algorithm on the
-// folder's rendered art (the mini-icon collage) — averaging per-icon dominant
-// colours across diverse apps collapses to brown mud. Falls back to per-icon
-// averaging if the folder art cannot be rendered.
+// Folder badge colour: average the dominant colours of the contained apps that
+// are currently showing a badge (per-app dominant colour with the dark/white
+// extremes filtered). Falls back to the folder-art collage dominant colour when
+// no badged app images resolve, then to the selected colour.
 static UIImage *DottoRenderViewImage(UIView *view) {
     if (!view || CGRectIsEmpty(view.bounds)) {
         return nil;
@@ -216,11 +216,6 @@ static UIImage *DottoRenderViewImage(UIView *view) {
 }
 
 static UIColor *DottoAverageFolderColour(SBFolderIcon *folderIcon, UIView *folderImageView) {
-    UIImage *folderArt = DottoRenderViewImage(folderImageView);
-    if (folderArt) {
-        return [folderArt dottoAverageColor];
-    }
-    // Fallback: average the dominant colours of the contained app icons.
     struct SBIconImageInfo info;
     info.size = CGSizeMake(60, 60);
     info.scale = 3.0;
@@ -231,6 +226,9 @@ static UIColor *DottoAverageFolderColour(SBFolderIcon *folderIcon, UIView *folde
         for (SBIcon *icon in list.icons) {
             if ([icon isKindOfClass:[SBFolderIcon class]]) {
                 continue; // keep it simple: nested folders are skipped
+            }
+            if (icon.badgeValue <= 0) {
+                continue; // only apps currently showing a badge count
             }
             UIImage *image = [icon iconImageWithInfo:info];
             if (!image) {
@@ -246,10 +244,14 @@ static UIColor *DottoAverageFolderColour(SBFolderIcon *folderIcon, UIView *folde
             }
         }
     }
-    if (count == 0) {
-        return nil;
+    if (count > 0) {
+        return [UIColor colorWithRed:red / count green:green / count blue:blue / count alpha:1.0];
     }
-    return [UIColor colorWithRed:red / count green:green / count blue:blue / count alpha:1.0];
+    UIImage *folderArt = DottoRenderViewImage(folderImageView);
+    if (folderArt) {
+        return [folderArt dottoAverageColor];
+    }
+    return nil;
 }
 
 - (UIColor *)dottoBadgeColour {

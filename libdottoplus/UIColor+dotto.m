@@ -45,6 +45,53 @@
     return (dr < 0 ? -dr : dr) + (dg < 0 ? -dg : dg) + (db < 0 ? -db : db);
 }
 
+// Cluster the rendered pixels into dominant-colour buckets.
+// skipExtremes drops near-black and near-white pixels so dark/white icon
+// backgrounds do not win (e.g. TikTok's black canvas -> its teal/red glyphs).
+- (NSArray<RGBPixel *> *)dottoClustersFromPixels:(const unsigned char *)pixels
+                                           width:(NSInteger)width
+                                          height:(NSInteger)height
+                                    skipExtremes:(BOOL)skipExtremes {
+    NSMutableArray<RGBPixel *> *clusters = [NSMutableArray array];
+    for (NSInteger y = 0; y < height; y++) {
+        for (NSInteger x = 0; x < width; x++) {
+            NSUInteger offset = ((NSUInteger)y * (NSUInteger)width + (NSUInteger)x) * 4;
+            // Opaque pixels only (alpha >= 128; the original tests the signed byte < 0).
+            if ((char)pixels[offset + 3] < 0) {
+                if (skipExtremes) {
+                    NSUInteger r = pixels[offset];
+                    NSUInteger g = pixels[offset + 1];
+                    NSUInteger b = pixels[offset + 2];
+                    double brightness = (r + g + b) / (3.0 * 255.0);
+                    if (brightness < 0.12 || brightness > 0.92) {
+                        continue;
+                    }
+                }
+                RGBPixel *pixel = [RGBPixel new];
+                pixel.r = pixels[offset];
+                pixel.g = pixels[offset + 1];
+                pixel.b = pixels[offset + 2];
+                BOOL merged = NO;
+                for (RGBPixel *cluster in clusters) {
+                    if ([self dottoColourDistance:pixel andB:cluster] < 27) {
+                        // Original: (existing + pixel) >> 1 (floor half).
+                        cluster.r = (cluster.r + pixel.r) / 2;
+                        cluster.g = (cluster.g + pixel.g) / 2;
+                        cluster.b = (cluster.b + pixel.b) / 2;
+                        cluster.d += 1;
+                        merged = YES;
+                        break;
+                    }
+                }
+                if (!merged) {
+                    [clusters addObject:pixel];
+                }
+            }
+        }
+    }
+    return clusters;
+}
+
 - (UIColor *)dottoAverageColor {
     NSInteger width = (NSInteger)self.size.width;
     NSInteger height = (NSInteger)self.size.height;
@@ -79,33 +126,18 @@
     CGContextDrawImage(context, CGRectMake(0, 0, width, height), cgImage);
     CGContextRelease(context);
 
-    NSMutableArray<RGBPixel *> *clusters = [NSMutableArray array];
-    for (NSInteger y = 0; y < height; y++) {
-        for (NSInteger x = 0; x < width; x++) {
-            NSUInteger offset = ((NSUInteger)y * (NSUInteger)width + (NSUInteger)x) * 4;
-            // Opaque pixels only (alpha >= 128; the original tests the signed byte < 0).
-            if ((char)pixels[offset + 3] < 0) {
-                RGBPixel *pixel = [RGBPixel new];
-                pixel.r = pixels[offset];
-                pixel.g = pixels[offset + 1];
-                pixel.b = pixels[offset + 2];
-                BOOL merged = NO;
-                for (RGBPixel *cluster in clusters) {
-                    if ([self dottoColourDistance:pixel andB:cluster] < 27) {
-                        // Original: (existing + pixel) >> 1 (floor half).
-                        cluster.r = (cluster.r + pixel.r) / 2;
-                        cluster.g = (cluster.g + pixel.g) / 2;
-                        cluster.b = (cluster.b + pixel.b) / 2;
-                        cluster.d += 1;
-                        merged = YES;
-                        break;
-                    }
-                }
-                if (!merged) {
-                    [clusters addObject:pixel];
-                }
-            }
-        }
+    // Prefer the extremes-filtered clusters (a real colour wins over a black or
+    // white canvas); fall back to the unfiltered set (original behaviour) when
+    // the icon has no mid-brightness colours (e.g. pure black & white icons).
+    NSArray<RGBPixel *> *clusters = [self dottoClustersFromPixels:pixels
+                                                           width:width
+                                                          height:height
+                                                    skipExtremes:YES];
+    if (clusters.count < 2) {
+        clusters = [self dottoClustersFromPixels:pixels
+                                          width:width
+                                         height:height
+                                   skipExtremes:NO];
     }
     free(pixels);
 
