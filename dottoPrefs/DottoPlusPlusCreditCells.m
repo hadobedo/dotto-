@@ -8,10 +8,7 @@
     if ((self = [super initWithStyle:UITableViewCellStyleDefault
                      reuseIdentifier:reuseIdentifier
                            specifier:specifier])) {
-        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20
-                                                                                            weight:UIImageSymbolWeightRegular];
-        self.imageView.image = [[UIImage systemImageNamed:@"person.crop.circle" withConfiguration:config]
-                                imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        // Icon comes from the specifier's PSIconImageKey (native path).
         self.imageView.tintColor = [UIColor labelColor];
         self.imageView.contentMode = UIViewContentModeScaleAspectFit;
         self.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
@@ -32,10 +29,7 @@
         // Blue link-style title.
         self.textLabel.textColor = [UIColor systemBlueColor];
 
-        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20
-                                                                                            weight:UIImageSymbolWeightRegular];
-        self.imageView.image = [[UIImage systemImageNamed:@"link" withConfiguration:config]
-                                imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        // Icon comes from the specifier's PSIconImageKey (native path).
         self.imageView.tintColor = [UIColor systemBlueColor];
         self.imageView.contentMode = UIViewContentModeScaleAspectFit;
         self.accessoryType = UITableViewCellAccessoryDisclosureIndicator;

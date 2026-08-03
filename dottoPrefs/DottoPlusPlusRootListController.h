@@ -10,5 +10,6 @@
 
 - (void)switchToggled:(UISwitch *)sender;
 - (void)setCellForRowAtIndexPath:(NSIndexPath *)indexPath enabled:(BOOL)enabled;
+- (UIImage *)symbolImageNamed:(NSString *)name color:(UIColor *)color;
 
 @end

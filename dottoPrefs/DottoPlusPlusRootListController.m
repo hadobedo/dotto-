@@ -38,8 +38,27 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
 - (NSArray *)specifiers {
     if (!_specifiers) {
         _specifiers = [self loadSpecifiersFromPlistName:@"Root" target:self];
+        for (PSSpecifier *specifier in _specifiers) {
+            NSString *key = [specifier propertyForKey:@"key"];
+            if ([key isEqualToString:@"kByRow"]) {
+                [specifier setProperty:[self symbolImageNamed:@"person.crop.circle"
+                                                        color:[UIColor labelColor]]
+                                forKey:PSIconImageKey];
+            } else if ([key isEqualToString:@"kOriginalLink"]) {
+                [specifier setProperty:[self symbolImageNamed:@"link"
+                                                        color:[UIColor systemBlueColor]]
+                                forKey:PSIconImageKey];
+            }
+        }
     }
     return _specifiers;
+}
+
+- (UIImage *)symbolImageNamed:(NSString *)name color:(UIColor *)color {
+    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20
+                                                                                        weight:UIImageSymbolWeightRegular];
+    UIImage *image = [UIImage systemImageNamed:name withConfiguration:config];
+    return [image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
 }
 
 // Credits footer: rendered through the table delegate for the last section
