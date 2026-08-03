@@ -6,10 +6,9 @@ static NSString *const DottoYouTubeURL = @"https://www.youtube.com/@NicksWorks";
 static NSString *const DottoSourceURL = @"https://github.com/hadobedo/dotto-";
 static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
 
-// HIG-style ABOUT & LINKS footer: an inset-grouped card of settings rows with
-// consistently sized SF Symbol icons, hairline separators, and a disclosure
-// chevron on each row. "By: Nick's Works" presents the social links in an
-// action sheet.
+// ABOUT & LINKS footer built from real UITableViewCells so the rows match the
+// native settings cells above (grouped card fill, body text, native disclosure
+// chevrons, hairline separators inset to the text).
 @implementation DottoPlusPlusCreditsFooterView {
     UIStackView *_stackView;
 }
@@ -46,10 +45,10 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
     [headerLabel.leadingAnchor constraintEqualToAnchor:_stackView.leadingAnchor].active = YES;
     [headerLabel.topAnchor constraintEqualToAnchor:_stackView.topAnchor constant:8].active = YES;
 
-    // Card container.
+    // Card container matching the native grouped cell fill.
     UIView *card = [[UIView alloc] init];
-    card.backgroundColor = [UIColor tertiarySystemGroupedBackgroundColor];
-    card.layer.cornerRadius = 12;
+    card.backgroundColor = [UIColor secondarySystemGroupedBackgroundColor];
+    card.layer.cornerRadius = 10;
     card.clipsToBounds = YES;
     card.translatesAutoresizingMaskIntoConstraints = NO;
     [_stackView addArrangedSubview:card];
@@ -69,141 +68,101 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
     ]];
 
     // Row 1: source.
-    UIView *sourceRow = [self settingsRowWithIcon:@"chevron.left.forwardslash.chevron.right"
-                                            title:@"Source on GitHub"
-                                           action:@selector(openSource)];
-    [rows addArrangedSubview:sourceRow];
-    [sourceRow.heightAnchor constraintEqualToConstant:44].active = YES;
+    UITableViewCell *sourceCell = [self settingsCellWithStyle:UITableViewCellStyleDefault
+                                                        icon:@"chevron.left.forwardslash.chevron.right"
+                                                       title:@"Source on GitHub"
+                                                      action:@selector(openSource)];
+    [rows addArrangedSubview:sourceCell];
+    [sourceCell.heightAnchor constraintEqualToConstant:44].active = YES;
 
     [rows addArrangedSubview:[self separator]];
 
     // Row 2: author, presents the social links.
-    UIView *authorRow = [self settingsRowWithIcon:@"person.crop.circle"
-                                            title:@"By: Nick's Works"
-                                           action:@selector(openSocialMenu)];
-    [rows addArrangedSubview:authorRow];
-    [authorRow.heightAnchor constraintEqualToConstant:44].active = YES;
+    UITableViewCell *authorCell = [self settingsCellWithStyle:UITableViewCellStyleDefault
+                                                        icon:@"person.crop.circle"
+                                                       title:@"By: Nick's Works"
+                                                      action:@selector(openSocialMenu)];
+    [rows addArrangedSubview:authorCell];
+    [authorCell.heightAnchor constraintEqualToConstant:44].active = YES;
 
     [rows addArrangedSubview:[self separator]];
 
     // Row 3: original tweak with stacked author credit.
-    UIView *originalRow = [self creditsRowWithIcon:@"link"
-                                             title:@"Original tweak (dotto+)"
-                                          subtitle:@"by Mirac & ConorTheDev"
-                                            action:@selector(openOriginal)];
-    [rows addArrangedSubview:originalRow];
-    [originalRow.heightAnchor constraintEqualToConstant:58].active = YES;
+    UITableViewCell *originalCell = [self settingsCellWithStyle:UITableViewCellStyleSubtitle
+                                                          icon:@"link"
+                                                         title:@"Original tweak (dotto+)"
+                                                      subtitle:@"by Mirac & ConorTheDev"
+                                                        action:@selector(openOriginal)];
+    [rows addArrangedSubview:originalCell];
+    [originalCell.heightAnchor constraintEqualToConstant:58].active = YES;
 
     [self.bottomAnchor constraintEqualToAnchor:card.bottomAnchor constant:16].active = YES;
 }
 
 - (UIView *)separator {
+    // Container fills the row; the hairline is inset to the text (16 + 20 icon
+    // + 14 gap), matching native separators.
+    UIView *container = [[UIView alloc] init];
+    container.translatesAutoresizingMaskIntoConstraints = NO;
+    [container.heightAnchor constraintEqualToConstant:0.5].active = YES;
     UIView *line = [[UIView alloc] init];
     line.backgroundColor = [UIColor separatorColor];
     line.translatesAutoresizingMaskIntoConstraints = NO;
-    [line.heightAnchor constraintEqualToConstant:0.5].active = YES;
-    return line;
+    [container addSubview:line];
+    [NSLayoutConstraint activateConstraints:@[
+        [line.leadingAnchor constraintEqualToAnchor:container.leadingAnchor constant:50],
+        [line.trailingAnchor constraintEqualToAnchor:container.trailingAnchor],
+        [line.topAnchor constraintEqualToAnchor:container.topAnchor],
+        [line.bottomAnchor constraintEqualToAnchor:container.bottomAnchor],
+    ]];
+    return container;
 }
 
-// Standard settings row: fixed-size leading icon, left title, chevron.
-- (UIView *)settingsRowWithIcon:(NSString *)symbolName title:(NSString *)title action:(SEL)action {
-    UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
-    button.backgroundColor = [UIColor clearColor];
-    button.translatesAutoresizingMaskIntoConstraints = NO;
-
+// Native-style settings cell with leading icon, title (and optional subtitle),
+// disclosure chevron, and a full-size transparent tap target.
+- (UITableViewCell *)settingsCellWithStyle:(UITableViewCellStyle)style
+                                      icon:(NSString *)symbolName
+                                     title:(NSString *)title
+                                  subtitle:(NSString *)subtitle
+                                    action:(SEL)action {
+    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:style reuseIdentifier:nil];
+    cell.backgroundColor = [UIColor clearColor];
+    cell.textLabel.text = title;
+    cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
+    cell.textLabel.textColor = [UIColor labelColor];
+    if (subtitle) {
+        cell.detailTextLabel.text = subtitle;
+        cell.detailTextLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleFootnote];
+        cell.detailTextLabel.textColor = [UIColor secondaryLabelColor];
+        cell.detailTextLabel.numberOfLines = 2;
+    }
     UIImageSymbolConfiguration *symbolConfig = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightRegular];
-    UIImageView *iconView = [[UIImageView alloc] initWithImage:
-                             [[UIImage systemImageNamed:symbolName withConfiguration:symbolConfig]
-                              imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]];
-    iconView.tintColor = [UIColor labelColor];
-    iconView.contentMode = UIViewContentModeScaleAspectFit;
-    iconView.translatesAutoresizingMaskIntoConstraints = NO;
-    [button addSubview:iconView];
+    cell.imageView.image = [[UIImage systemImageNamed:symbolName withConfiguration:symbolConfig]
+                            imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    cell.imageView.tintColor = [UIColor labelColor];
+    cell.imageView.contentMode = UIViewContentModeScaleAspectFit;
+    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+    cell.translatesAutoresizingMaskIntoConstraints = NO;
 
-    UILabel *titleLabel = [[UILabel alloc] init];
-    titleLabel.text = title;
-    titleLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
-    titleLabel.textColor = [UIColor labelColor];
-    titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [button addSubview:titleLabel];
-
-    UIImageView *chevron = [[UIImageView alloc] initWithImage:
-                            [[UIImage systemImageNamed:@"chevron.right"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]];
-    chevron.tintColor = [UIColor tertiaryLabelColor];
-    chevron.translatesAutoresizingMaskIntoConstraints = NO;
-    [button addSubview:chevron];
-
+    UIButton *tap = [UIButton buttonWithType:UIButtonTypeCustom];
+    tap.backgroundColor = [UIColor clearColor];
+    tap.translatesAutoresizingMaskIntoConstraints = NO;
+    [tap addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
+    [cell addSubview:tap];
     [NSLayoutConstraint activateConstraints:@[
-        [iconView.leadingAnchor constraintEqualToAnchor:button.leadingAnchor constant:16],
-        [iconView.centerYAnchor constraintEqualToAnchor:button.centerYAnchor],
-        [iconView.widthAnchor constraintEqualToConstant:20],
-        [iconView.heightAnchor constraintEqualToConstant:20],
-        [titleLabel.leadingAnchor constraintEqualToAnchor:iconView.trailingAnchor constant:14],
-        [titleLabel.centerYAnchor constraintEqualToAnchor:button.centerYAnchor],
-        [titleLabel.trailingAnchor constraintLessThanOrEqualToAnchor:chevron.leadingAnchor constant:-8],
-        [chevron.trailingAnchor constraintEqualToAnchor:button.trailingAnchor constant:-16],
-        [chevron.centerYAnchor constraintEqualToAnchor:button.centerYAnchor],
+        [tap.topAnchor constraintEqualToAnchor:cell.topAnchor],
+        [tap.leadingAnchor constraintEqualToAnchor:cell.leadingAnchor],
+        [tap.trailingAnchor constraintEqualToAnchor:cell.trailingAnchor],
+        [tap.bottomAnchor constraintEqualToAnchor:cell.bottomAnchor],
     ]];
-
-    [button addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
-    return button;
+    return cell;
 }
 
-// Developer credits row: stacked title + wrapped footnote subtitle.
-- (UIView *)creditsRowWithIcon:(NSString *)symbolName
-                         title:(NSString *)title
-                      subtitle:(NSString *)subtitle
-                        action:(SEL)action {
-    UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
-    button.backgroundColor = [UIColor clearColor];
-    button.translatesAutoresizingMaskIntoConstraints = NO;
-
-    UIImageView *iconView = [[UIImageView alloc] initWithImage:
-                             [[UIImage systemImageNamed:symbolName] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]];
-    iconView.tintColor = [UIColor labelColor];
-    iconView.contentMode = UIViewContentModeScaleAspectFit;
-    iconView.translatesAutoresizingMaskIntoConstraints = NO;
-    [button addSubview:iconView];
-
-    UILabel *titleLabel = [[UILabel alloc] init];
-    titleLabel.text = title;
-    titleLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
-    titleLabel.textColor = [UIColor labelColor];
-    titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [button addSubview:titleLabel];
-
-    UILabel *subtitleLabel = [[UILabel alloc] init];
-    subtitleLabel.text = subtitle;
-    subtitleLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleFootnote];
-    subtitleLabel.textColor = [UIColor secondaryLabelColor];
-    subtitleLabel.numberOfLines = 2;
-    subtitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [button addSubview:subtitleLabel];
-
-    UIImageView *chevron = [[UIImageView alloc] initWithImage:
-                            [[UIImage systemImageNamed:@"chevron.right"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]];
-    chevron.tintColor = [UIColor tertiaryLabelColor];
-    chevron.translatesAutoresizingMaskIntoConstraints = NO;
-    [button addSubview:chevron];
-
-    [NSLayoutConstraint activateConstraints:@[
-        [iconView.leadingAnchor constraintEqualToAnchor:button.leadingAnchor constant:16],
-        [iconView.centerYAnchor constraintEqualToAnchor:button.centerYAnchor],
-        [iconView.widthAnchor constraintEqualToConstant:20],
-        [iconView.heightAnchor constraintEqualToConstant:20],
-        [titleLabel.leadingAnchor constraintEqualToAnchor:iconView.trailingAnchor constant:14],
-        [titleLabel.topAnchor constraintEqualToAnchor:button.topAnchor constant:9],
-        [titleLabel.trailingAnchor constraintEqualToAnchor:chevron.leadingAnchor constant:-8],
-        [subtitleLabel.leadingAnchor constraintEqualToAnchor:titleLabel.leadingAnchor],
-        [subtitleLabel.topAnchor constraintEqualToAnchor:titleLabel.bottomAnchor constant:1],
-        [subtitleLabel.trailingAnchor constraintEqualToAnchor:titleLabel.trailingAnchor],
-        [subtitleLabel.bottomAnchor constraintLessThanOrEqualToAnchor:button.bottomAnchor constant:-7],
-        [chevron.trailingAnchor constraintEqualToAnchor:button.trailingAnchor constant:-16],
-        [chevron.centerYAnchor constraintEqualToAnchor:button.centerYAnchor],
-    ]];
-
-    [button addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
-    return button;
+- (UITableViewCell *)settingsCellWithStyle:(UITableViewCellStyle)style
+                                      icon:(NSString *)symbolName
+                                     title:(NSString *)title
+                                    action:(SEL)action {
+    return [self settingsCellWithStyle:style icon:symbolName title:title subtitle:nil action:action];
 }
 
 - (void)openSocialMenu {
