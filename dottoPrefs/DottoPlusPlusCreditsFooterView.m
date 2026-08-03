@@ -11,6 +11,8 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
 // chevrons, hairline separators inset to the text).
 @implementation DottoPlusPlusCreditsFooterView {
     UIStackView *_stackView;
+    NSLayoutConstraint *_stackLeading;
+    NSLayoutConstraint *_stackTrailing;
 }
 
 - (instancetype)initWithSpecifier:(PSSpecifier *)specifier {
@@ -29,10 +31,12 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
     _stackView.translatesAutoresizingMaskIntoConstraints = NO;
     [self addSubview:_stackView];
 
+    _stackLeading = [_stackView.leadingAnchor constraintEqualToAnchor:self.leadingAnchor constant:20];
+    _stackTrailing = [_stackView.trailingAnchor constraintEqualToAnchor:self.trailingAnchor constant:-20];
     [NSLayoutConstraint activateConstraints:@[
         [_stackView.topAnchor constraintEqualToAnchor:self.topAnchor],
-        [_stackView.leadingAnchor constraintEqualToAnchor:self.leadingAnchor constant:20],
-        [_stackView.trailingAnchor constraintEqualToAnchor:self.trailingAnchor constant:-20],
+        _stackLeading,
+        _stackTrailing,
     ]];
 
     // Section header.
@@ -129,7 +133,8 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
     cell.backgroundColor = [UIColor clearColor];
     cell.textLabel.text = title;
     cell.textLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
-    cell.textLabel.textColor = [UIColor labelColor];
+    // Blue signals tappability (link-style rows).
+    cell.textLabel.textColor = [UIColor systemBlueColor];
     if (subtitle) {
         cell.detailTextLabel.text = subtitle;
         cell.detailTextLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleFootnote];
@@ -139,7 +144,7 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
     UIImageSymbolConfiguration *symbolConfig = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightRegular];
     cell.imageView.image = [[UIImage systemImageNamed:symbolName withConfiguration:symbolConfig]
                             imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-    cell.imageView.tintColor = [UIColor labelColor];
+    cell.imageView.tintColor = [UIColor systemBlueColor];
     cell.imageView.contentMode = UIViewContentModeScaleAspectFit;
     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     cell.translatesAutoresizingMaskIntoConstraints = NO;
@@ -163,6 +168,11 @@ static NSString *const DottoOriginalURL = @"https://repo.dynastic.co/dotto";
                                      title:(NSString *)title
                                     action:(SEL)action {
     return [self settingsCellWithStyle:style icon:symbolName title:title subtitle:nil action:action];
+}
+
+- (void)setCardInset:(CGFloat)inset {
+    _stackLeading.constant = inset;
+    _stackTrailing.constant = -inset;
 }
 
 - (void)openSocialMenu {

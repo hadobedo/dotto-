@@ -49,7 +49,9 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
 // The respring note lives at the top of the page as the first group's footer.
 - (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
     if (section == tableView.numberOfSections - 1) {
-        return [self combinedCreditsFooter];
+        DottoPlusPlusCreditsFooterView *footer = [self combinedCreditsFooter];
+        [footer setCardInset:tableView.layoutMargins.left];
+        return footer;
     }
     if ([super respondsToSelector:@selector(tableView:viewForFooterInSection:)]) {
         return [super tableView:tableView viewForFooterInSection:section];
