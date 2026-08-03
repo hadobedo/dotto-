@@ -48,7 +48,7 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
             note.numberOfLines = 0;
             note.translatesAutoresizingMaskIntoConstraints = NO;
 
-            DottoPlusPlusCreditsFooterView *credits = [[DottoPlusPlusCreditsFooterView alloc] initWithSpecifier:nil];
+            UIView *credits = (UIView *)[[DottoPlusPlusCreditsFooterView alloc] initWithSpecifier:nil];
             credits.translatesAutoresizingMaskIntoConstraints = NO;
 
             UIView *container = [[UIView alloc] init];

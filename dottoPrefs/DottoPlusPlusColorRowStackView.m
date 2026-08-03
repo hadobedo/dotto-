@@ -45,8 +45,8 @@ static UIColor *dppSelectedColor;
         self.hostController = controller;
 
         CGFloat screenWidth = CGRectGetWidth([UIScreen mainScreen].bounds);
-        // Even gaps with 16pt side margins: (width - 2*16 - 6*30) / 5.
-        self.spacing = (screenWidth - 32.0 - 180.0) / 5.0;
+        // Even gaps with 24pt side margins: (width - 2*24 - 6*30) / 5.
+        self.spacing = (screenWidth - 48.0 - 180.0) / 5.0;
 
         for (UIColor *color in colors) {
             DottoPlusPlusColorItemView *item = [[DottoPlusPlusColorItemView alloc] initWithColor:color
