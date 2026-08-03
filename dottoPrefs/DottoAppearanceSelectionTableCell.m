@@ -49,7 +49,9 @@ static NSString *const kAppearanceStyle = @"kAppearanceStyle";
         button.translatesAutoresizingMaskIntoConstraints = NO;
 
         UIImageView *imageView = [[UIImageView alloc] init];
-        imageView.image = [UIImage imageNamed:option[@"image"]];
+        imageView.image = [UIImage imageNamed:option[@"image"]
+                                     inBundle:[NSBundle bundleForClass:[self class]]
+                withConfiguration:nil];
         imageView.contentMode = UIViewContentModeScaleAspectFit;
         imageView.translatesAutoresizingMaskIntoConstraints = NO;
         [button addSubview:imageView];

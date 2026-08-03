@@ -9,6 +9,7 @@
 #import "DottoPrivate.h"
 
 #import <objc/runtime.h>
+#import <roothide.h>
 
 #import "DottoPreferences.h"
 #import "UIColor+dotto.h"
@@ -231,10 +232,13 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
         return;
     }
 
-    NSString *path = [dottoPrefs appearanceStyle] != 0 ? DottoCircleBadgePath
-                                                       : DottoNormalBadgePath;
+    NSString *path = jbroot([dottoPrefs appearanceStyle] != 0 ? DottoCircleBadgePath
+                                                               : DottoNormalBadgePath);
     UIImage *badgeImage = [DottoCroppedBadgeImage(path)
                            imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    DOTTOLOG(@"badge image: path=%@ exists=%d image=%@ layerContents=%@ textImageTuple=%@",
+             path, [[NSFileManager defaultManager] fileExistsAtPath:path], badgeImage,
+             self.layer.contents, [[self valueForKey:@"textImageTuple"] valueForKey:@"image"]);
 
     if (!self.dottoStockBackgroundImage) {
         self.dottoStockBackgroundImage = [backgroundView image];

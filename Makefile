@@ -45,8 +45,9 @@ dottoPrefs_FRAMEWORKS = UIKit Foundation
 dottoPrefs_PRIVATE_FRAMEWORKS = Preferences
 dottoPrefs_LIBRARIES = dottoplus
 # Xcode SDKs do not ship the private Preferences framework; link against the
-# vendored stub (same layout as the pinned theos SDK).
-dottoPrefs_LDFLAGS = $(DOTTO_LIB_LDFLAGS) -F$(THEOS_PROJECT_DIR)/sdks
+# vendored stub (same layout as the pinned theos SDK). jbroot() resolves at
+# runtime from the always-loaded libroothide.
+dottoPrefs_LDFLAGS = $(DOTTO_LIB_LDFLAGS) -F$(THEOS_PROJECT_DIR)/sdks -undefined dynamic_lookup
 
 include $(THEOS_MAKE_PATH)/library.mk
 include $(THEOS_MAKE_PATH)/tweak.mk
