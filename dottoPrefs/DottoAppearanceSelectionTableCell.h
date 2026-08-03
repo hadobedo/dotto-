@@ -6,5 +6,6 @@
 @interface DottoAppearanceSelectionTableCell : PSTableCell
 
 - (instancetype)initWithSpecifier:(PSSpecifier *)specifier;
+- (void)updateForType:(NSInteger)type;
 
 @end
