@@ -6,111 +6,172 @@
 
 static NSString *const kAppearanceStyle = @"kAppearanceStyle";
 
+// Faithful reimplementation of the original me.conorthedev.libappearancecell
+// AppearanceSelectionTableCell (iOS 13-style appearance selector): 60pt icon
+// examples, 17pt captions, circle checkmark, haptics, direct pref write.
+@interface DottoAppearanceTypeStackView : UIStackView
+@property (nonatomic, assign) NSInteger type;
+@property (nonatomic, weak) DottoAppearanceSelectionTableCell *hostController;
+@property (nonatomic, strong) UIButton *checkmarkButton;
+- (instancetype)initWithType:(NSInteger)type
+               forController:(DottoAppearanceSelectionTableCell *)controller
+                   withImage:(UIImage *)image
+                     andText:(NSString *)text;
+@end
+
+@implementation DottoAppearanceTypeStackView
+
+- (instancetype)initWithType:(NSInteger)type
+               forController:(DottoAppearanceSelectionTableCell *)controller
+                   withImage:(UIImage *)image
+                     andText:(NSString *)text {
+    if ((self = [super init])) {
+        self.type = type;
+        self.hostController = controller;
+
+        self.axis = UILayoutConstraintAxisVertical;
+        self.alignment = UIStackViewAlignmentCenter;
+        self.distribution = UIStackViewDistributionEqualSpacing;
+        self.spacing = 8;
+        self.translatesAutoresizingMaskIntoConstraints = NO;
+        self.userInteractionEnabled = YES;
+
+        UIImageView *iconView = [[UIImageView alloc] init];
+        iconView.clipsToBounds = YES;
+        iconView.contentMode = UIViewContentModeScaleAspectFit;
+        iconView.translatesAutoresizingMaskIntoConstraints = NO;
+        iconView.image = image;
+        [self addArrangedSubview:iconView];
+        [iconView.widthAnchor constraintEqualToConstant:60].active = YES;
+
+        UILabel *captionLabel = [[UILabel alloc] init];
+        captionLabel.text = text;
+        [captionLabel setFont:[UIFont systemFontOfSize:17.0]];
+        captionLabel.textColor = [UIColor labelColor];
+        [captionLabel.heightAnchor constraintEqualToConstant:20].active = YES;
+        [self addArrangedSubview:captionLabel];
+
+        self.checkmarkButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        self.checkmarkButton.translatesAutoresizingMaskIntoConstraints = NO;
+        [self.checkmarkButton.heightAnchor constraintEqualToConstant:22].active = YES;
+        [self.checkmarkButton.widthAnchor constraintEqualToConstant:22].active = YES;
+
+        // UIKit's classic appearance-selector checkmark assets; fall back to
+        // SF Symbols if the private assets are unavailable on this iOS.
+        UIImage *uncheckedImage = [UIImage imageNamed:@"UIRemoveControlMultiNotCheckedImage.png"
+                                              inBundle:[NSBundle bundleForClass:[UIView class]]
+                         compatibleWithTraitCollection:nil];
+        UIImage *checkedImage = [UIImage imageNamed:@"UITintedCircularButtonCheckmark.png"
+                                            inBundle:[NSBundle bundleForClass:[UIView class]]
+                       compatibleWithTraitCollection:nil];
+        if (!uncheckedImage) {
+            uncheckedImage = [UIImage systemImageNamed:@"circle"];
+        }
+        if (!checkedImage) {
+            checkedImage = [UIImage systemImageNamed:@"checkmark.circle.fill"];
+        }
+        [self.checkmarkButton setImage:[uncheckedImage imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]
+                              forState:UIControlStateNormal];
+        [self.checkmarkButton setImage:[checkedImage imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]
+                              forState:UIControlStateSelected];
+        [self.checkmarkButton addTarget:self action:@selector(checkmarkTapped)
+                       forControlEvents:UIControlEventTouchUpInside];
+        [self addArrangedSubview:self.checkmarkButton];
+
+        UILongPressGestureRecognizer *tap = [[UILongPressGestureRecognizer alloc]
+                                             initWithTarget:self action:@selector(buttonTapped:)];
+        tap.minimumPressDuration = 0;
+        [self addGestureRecognizer:tap];
+    }
+    return self;
+}
+
+- (void)buttonTapped:(UILongPressGestureRecognizer *)sender {
+    if (sender.state == UIGestureRecognizerStateBegan) {
+        [UIView animateWithDuration:0.1 delay:0 options:UIViewAnimationOptionCurveEaseInOut
+                         animations:^{ self.alpha = 0.5; } completion:nil];
+    } else if (sender.state == UIGestureRecognizerStateEnded) {
+        [UIView animateWithDuration:0.1 delay:0 options:UIViewAnimationOptionCurveEaseInOut
+                         animations:^{ self.alpha = 1; } completion:nil];
+        [self selectType];
+    }
+}
+
+- (void)checkmarkTapped {
+    // The checkmark is a visual affordance; tapping anywhere selects.
+    [self selectType];
+}
+
+- (void)selectType {
+    UIImpactFeedbackGenerator *feedback = [[UIImpactFeedbackGenerator alloc]
+                                           initWithStyle:UIImpactFeedbackStyleMedium];
+    [feedback impactOccurred];
+    [[DottoPreferences sharedInstance] writeValue:@(self.type) forKey:kAppearanceStyle];
+    [self.hostController updateForType:self.type];
+}
+
+@end
+
 @implementation DottoAppearanceSelectionTableCell {
-    UIStackView *_optionsStack;
-    NSMutableArray<UIButton *> *_optionButtons;
-    NSArray<NSDictionary *> *_options;
+    UIStackView *_containerStackView;
 }
 
 - (instancetype)initWithSpecifier:(PSSpecifier *)specifier {
-    return [self initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil specifier:specifier];
+    return [self initWithStyle:UITableViewCellStyleDefault
+               reuseIdentifier:@"AppearanceSelectionTableCell"
+                     specifier:specifier];
 }
 
 - (instancetype)initWithStyle:(UITableViewCellStyle)style
               reuseIdentifier:(NSString *)reuseIdentifier
                     specifier:(PSSpecifier *)specifier {
     if ((self = [super initWithStyle:style reuseIdentifier:reuseIdentifier specifier:specifier])) {
-        _optionButtons = [NSMutableArray array];
-        _options = [specifier propertyForKey:@"options"];
-        if (!_options) {
-            _options = @[
+        NSArray<NSDictionary *> *options = [specifier propertyForKey:@"options"];
+        if (!options) {
+            options = @[
                 @{ @"text" : @"dotto", @"image" : @"__dotto_ignore_normal" },
                 @{ @"text" : @"dotto O's", @"image" : @"__dotto_ignore_circle" },
             ];
         }
-        [self _buildOptions];
-        [[DottoPreferences sharedInstance] reloadPreferences];
-        [self _refreshSelection];
+        NSBundle *prefsBundle = [NSBundle bundleForClass:[self class]];
+
+        _containerStackView = [[UIStackView alloc] init];
+        _containerStackView.axis = UILayoutConstraintAxisHorizontal;
+        _containerStackView.alignment = UIStackViewAlignmentCenter;
+        _containerStackView.distribution = UIStackViewDistributionEqualSpacing;
+        _containerStackView.spacing = 60;
+        _containerStackView.translatesAutoresizingMaskIntoConstraints = NO;
+
+        [options enumerateObjectsUsingBlock:^(NSDictionary *option, NSUInteger idx, BOOL *stop) {
+            UIImage *image = [UIImage imageNamed:option[@"image"]
+                                        inBundle:prefsBundle
+                   compatibleWithTraitCollection:nil];
+            DottoAppearanceTypeStackView *stack = [[DottoAppearanceTypeStackView alloc]
+                                                   initWithType:(NSInteger)idx
+                                                   forController:self
+                                                       withImage:image
+                                                         andText:option[@"text"]];
+            [_containerStackView addArrangedSubview:stack];
+            [stack.topAnchor constraintEqualToAnchor:_containerStackView.topAnchor constant:16].active = YES;
+            [stack.bottomAnchor constraintEqualToAnchor:_containerStackView.bottomAnchor constant:-16].active = YES;
+        }];
+
+        [self.contentView addSubview:_containerStackView];
+        [_containerStackView.heightAnchor constraintEqualToAnchor:self.heightAnchor].active = YES;
+        [_containerStackView.centerXAnchor constraintEqualToAnchor:self.centerXAnchor].active = YES;
+        [_containerStackView.centerYAnchor constraintEqualToAnchor:self.centerYAnchor].active = YES;
+
+        [self updateForType:(NSInteger)[[DottoPreferences sharedInstance] appearanceStyle]];
     }
     return self;
 }
 
-- (void)_buildOptions {
-    _optionsStack = [[UIStackView alloc] init];
-    _optionsStack.axis = UILayoutConstraintAxisHorizontal;
-    _optionsStack.alignment = UIStackViewAlignmentCenter;
-    _optionsStack.distribution = UIStackViewDistributionFillEqually;
-    _optionsStack.spacing = 16;
-    _optionsStack.translatesAutoresizingMaskIntoConstraints = NO;
-
-    [_options enumerateObjectsUsingBlock:^(NSDictionary *option, NSUInteger idx, BOOL *stop __unused) {
-        UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
-        button.tag = (NSInteger)idx;
-        button.translatesAutoresizingMaskIntoConstraints = NO;
-
-        UIImageView *imageView = [[UIImageView alloc] init];
-        imageView.image = [UIImage imageNamed:option[@"image"]
-                                     inBundle:[NSBundle bundleForClass:[self class]]
-                withConfiguration:nil];
-        imageView.contentMode = UIViewContentModeScaleAspectFit;
-        imageView.translatesAutoresizingMaskIntoConstraints = NO;
-        [button addSubview:imageView];
-
-        UILabel *label = [[UILabel alloc] init];
-        label.text = option[@"text"];
-        label.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
-        label.textAlignment = NSTextAlignmentCenter;
-        label.translatesAutoresizingMaskIntoConstraints = NO;
-        [button addSubview:label];
-
-        UIImageView *checkmark = [[UIImageView alloc] init];
-        checkmark.image = [UIImage systemImageNamed:@"checkmark.circle.fill"];
-        checkmark.contentMode = UIViewContentModeScaleAspectFit;
-        checkmark.tag = 1001;
-        checkmark.translatesAutoresizingMaskIntoConstraints = NO;
-        [button addSubview:checkmark];
-
-        [NSLayoutConstraint activateConstraints:@[
-            [imageView.topAnchor constraintEqualToAnchor:button.topAnchor],
-            [imageView.centerXAnchor constraintEqualToAnchor:button.centerXAnchor],
-            [imageView.widthAnchor constraintEqualToConstant:124],
-            [imageView.heightAnchor constraintEqualToConstant:110],
-            [label.topAnchor constraintEqualToAnchor:imageView.bottomAnchor constant:6],
-            [label.centerXAnchor constraintEqualToAnchor:button.centerXAnchor],
-            [label.bottomAnchor constraintEqualToAnchor:button.bottomAnchor],
-            [checkmark.topAnchor constraintEqualToAnchor:button.topAnchor constant:-4],
-            [checkmark.trailingAnchor constraintEqualToAnchor:button.trailingAnchor constant:4],
-            [checkmark.widthAnchor constraintEqualToConstant:26],
-            [checkmark.heightAnchor constraintEqualToConstant:26],
-        ]];
-
-        [button addTarget:self action:@selector(_optionTapped:)
-         forControlEvents:UIControlEventTouchUpInside];
-        [_optionsStack addArrangedSubview:button];
-        [_optionButtons addObject:button];
-    }];
-
-    [self.contentView addSubview:_optionsStack];
-    [NSLayoutConstraint activateConstraints:@[
-        [_optionsStack.centerXAnchor constraintEqualToAnchor:self.contentView.centerXAnchor],
-        [_optionsStack.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor],
-        [_optionsStack.widthAnchor constraintEqualToConstant:124 * 2 + 16],
-        [_optionsStack.heightAnchor constraintEqualToConstant:138],
-    ]];
-}
-
-- (void)_optionTapped:(UIButton *)button {
-    [[DottoPreferences sharedInstance] writeValue:@(button.tag) forKey:kAppearanceStyle];
-    [self _refreshSelection];
-}
-
-- (void)_refreshSelection {
-    NSInteger selected = [[DottoPreferences sharedInstance] appearanceStyle];
-    [_optionButtons enumerateObjectsUsingBlock:^(UIButton *button, NSUInteger idx, BOOL *stop __unused) {
-        UIImageView *checkmark = [button viewWithTag:1001];
-        checkmark.tintColor = [UIColor systemBlueColor];
-        checkmark.hidden = ((NSInteger)idx != selected);
-    }];
+- (void)updateForType:(NSInteger)type {
+    for (DottoAppearanceTypeStackView *stack in _containerStackView.arrangedSubviews) {
+        stack.checkmarkButton.selected = (stack.type == type);
+        stack.checkmarkButton.tintColor = (stack.checkmarkButton.selected) ? [UIColor systemBlueColor]
+                                                                            : [UIColor systemGrayColor];
+    }
 }
 
 @end
