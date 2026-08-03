@@ -44,7 +44,9 @@ dottoPrefs_CFLAGS = -fobjc-arc -Wall -Wextra -Werror -Ilibdottoplus
 dottoPrefs_FRAMEWORKS = UIKit Foundation
 dottoPrefs_PRIVATE_FRAMEWORKS = Preferences
 dottoPrefs_LIBRARIES = dottoplus
-dottoPrefs_LDFLAGS = $(DOTTO_LIB_LDFLAGS)
+# Xcode SDKs do not ship the private Preferences framework; link against the
+# vendored stub (same layout as the pinned theos SDK).
+dottoPrefs_LDFLAGS = $(DOTTO_LIB_LDFLAGS) -F$(THEOS_PROJECT_DIR)/sdks
 
 include $(THEOS_MAKE_PATH)/library.mk
 include $(THEOS_MAKE_PATH)/tweak.mk
