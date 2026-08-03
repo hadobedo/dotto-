@@ -16,6 +16,23 @@
 
 static NSMutableArray *dottoBadgeViews;
 static DottoPreferences *dottoPrefs;
+// SnowBoard (and other badge themers) may hook the same methods and load after
+// dotto (alphabetical dylib order), so their changes win within a layout pass.
+// Re-assert dotto once per pass on the next runloop turn to have the last word.
+static BOOL dottoReapplyScheduled;
+
+static void DottoScheduleReapply(void) {
+    if (dottoReapplyScheduled) {
+        return;
+    }
+    dottoReapplyScheduled = YES;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        dottoReapplyScheduled = NO;
+        for (SBIconBadgeView *badgeView in dottoBadgeViews) {
+            [badgeView applyDotto];
+        }
+    });
+}
 
 static NSString *const DottoReloadNotification = @"me.conorthedev.dotto/ReloadPrefs";
 static NSString *const DottoNormalBadgePath =
@@ -289,6 +306,7 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
     DOTTOLOG(@"applyDotto DONE bg=%@ frame=%@ img=%@ tint=%@ alpha=%.2f",
              backgroundView, NSStringFromCGRect([backgroundView frame]), [backgroundView image],
              [backgroundView tintColor], [backgroundView alpha]);
+    DottoScheduleReapply();
 }
 
 @end
