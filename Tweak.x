@@ -31,6 +31,82 @@ static NSString *const DottoNormalBadgePath =
 static NSString *const DottoCircleBadgePath =
     @"/Library/Application Support/dottoplusplus/badges/circle/SBBadgeBG@3x.png";
 
+// The shipped badge art occupies only the top-right corner of its 95x95 canvas
+// (~36x36 px). Crop it to its opaque bounding box so the dot fills the frame.
+// Deriving the position from the art itself keeps placement exact if the assets
+// ever change.
+static NSDictionary *DottoPlusPlusBadgeArt(NSString *path) {
+    static NSMutableDictionary<NSString *, NSDictionary *> *cache = nil;
+    if (!cache) {
+        cache = [NSMutableDictionary dictionary];
+    }
+    NSDictionary *cached = cache[path];
+    if (cached) {
+        return cached;
+    }
+    UIImage *image = [UIImage imageWithContentsOfFile:path];
+    CGImageRef cgImage = image.CGImage;
+    if (!cgImage) {
+        NSDictionary *fallback = @{
+            @"image" : image ?: [UIImage new],
+            @"center" : [NSValue valueWithCGPoint:CGPointMake(13, 13)],
+        };
+        cache[path] = fallback;
+        return fallback;
+    }
+    size_t width = CGImageGetWidth(cgImage);
+    size_t height = CGImageGetHeight(cgImage);
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    unsigned char *pixels = calloc(width * height * 4, sizeof(unsigned char));
+    if (pixels) {
+        CGContextRef ctx = CGBitmapContextCreate(pixels, width, height, 8, width * 4,
+                                                 colorSpace, kCGImageAlphaPremultipliedLast);
+        if (ctx) {
+            CGContextDrawImage(ctx, CGRectMake(0, 0, width, height), cgImage);
+            size_t minX = width, minY = height, maxX = 0, maxY = 0;
+            for (size_t y = 0; y < height; y++) {
+                for (size_t x = 0; x < width; x++) {
+                    if (pixels[(y * width + x) * 4 + 3] > 16) {
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+            }
+            CGContextRelease(ctx);
+            if (maxX > minX && maxY > minY) {
+                CGRect crop = CGRectMake(minX, minY, maxX - minX + 1, maxY - minY + 1);
+                CGImageRef cropped = CGImageCreateWithImageInRect(cgImage, crop);
+                if (cropped) {
+                    UIImage *result = [UIImage imageWithCGImage:cropped
+                                                          scale:image.scale
+                                                    orientation:image.imageOrientation];
+                    CGImageRelease(cropped);
+                    CGFloat centerX = (minX + maxX + 1) / 2.0 / (double)width * 26.0;
+                    CGFloat centerY = (minY + maxY + 1) / 2.0 / (double)height * 26.0;
+                    NSDictionary *art = @{
+                        @"image" : result,
+                        @"center" : [NSValue valueWithCGPoint:CGPointMake(centerX, centerY)],
+                    };
+                    cache[path] = art;
+                    free(pixels);
+                    CGColorSpaceRelease(colorSpace);
+                    return art;
+                }
+            }
+        }
+        free(pixels);
+    }
+    CGColorSpaceRelease(colorSpace);
+    NSDictionary *fallback = @{
+        @"image" : image ?: [UIImage new],
+        @"center" : [NSValue valueWithCGPoint:CGPointMake(13, 13)],
+    };
+    cache[path] = fallback;
+    return fallback;
+}
+
 #pragma mark - SBIconBadgeView associated state + new methods
 
 static char const kDottoPlusPlusIsIconFolderKey;
