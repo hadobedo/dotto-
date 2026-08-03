@@ -189,3 +189,65 @@ jobs:
           git add .
           git diff --cached --quiet || git commit -m "Publish dotto++ $version"
           git push origin main
+
+  create-github-release:
+    # Attach the built rootless + roothide debs (and checksums) to a GitHub
+    # Release for the pushed tag, so releases/vX.Y.Z has direct download links
+    # alongside the package repo feed. Runs independently of the repo feed
+    # publish, which is gated behind the production environment approval.
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Download release packages
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          pattern: release-*
+          merge-multiple: false
+
+      - name: Stage release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets
+          for scheme in rootless roothide; do
+            cp "release-$scheme"/*.deb assets/
+            { printf '[%s]\n' "$scheme"; cat "release-$scheme/SHA256SUMS"; } >> assets/SHA256SUMS
+          done
+          test "$(find assets -name '*.deb' | wc -l)" -eq 2
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          previous_tag="$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
+          {
+            printf '## dotto++ %s\n\n' "$version"
+            printf 'Minimalistic notification dots for iOS 15-17, rebuilt for rootless/roothide jailbreaks.\n'
+            printf 'Rootless rewrite of the original dotto+ by ConorTheDev & Mirac.\n\n'
+            printf '**Package repo:** https://hadobedo.github.io/repo\n'
+            printf '**Source:** https://github.com/hadobedo/dotto-\n\n'
+            printf '### Install\n'
+            printf 'Add the repo above to Sileo/Zebra, or install the deb matching your jailbreak:\n'
+            printf -- '- `iphoneos-arm64` deb -> rootless (Dopamine, palera1n rootless)\n'
+            printf -- '- `iphoneos-arm64e` deb -> roothide\n\n'
+            printf 'Requires iOS 15-17 on a rootless/roothide jailbreak; `ellekit` and `preferenceloader` install automatically from the repo.\n\n'
+            if [ -n "$previous_tag" ]; then
+              printf '### Changes since %s\n\n' "$previous_tag"
+              git log --oneline --no-decorate "$previous_tag".."$GITHUB_REF_NAME"
+              printf '\n'
+            fi
+            printf '### Checksums\n\n'
+            cat assets/SHA256SUMS
+          } > release-notes.md
+          gh release create "$GITHUB_REF_NAME" assets/* \
+            --title "dotto++ $version" \
+            --notes-file release-notes.md
