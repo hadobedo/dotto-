@@ -42,9 +42,12 @@ if [[ $package_version != "$repository_version" ]]; then
     exit 1
 fi
 
-grep -Fx 'Package: me.conorthedev.dotto+' "$package_control"
-grep -Fx 'Architecture: iphoneos-arm64' "$package_control"
-grep -F 'Depends: firmware (>= 17.0), ellekit, preferenceloader' "$package_control"
+grep -Fx 'Package: me.conorthedev.dotto+' "$package_control" \
+    || { echo "Package mismatch:" >&2; grep '^Package:' "$package_control" >&2; exit 1; }
+grep -Fx 'Architecture: iphoneos-arm64' "$package_control" \
+    || { echo "Architecture mismatch:" >&2; grep '^Architecture:' "$package_control" >&2; exit 1; }
+grep -F 'Depends: firmware (>= 17.0), ellekit, preferenceloader' "$package_control" \
+    || { echo "Depends mismatch:" >&2; grep '^Depends:' "$package_control" >&2; exit 1; }
 
 printf 'package metadata verified: %s (Version: %s)\n' \
     "$package" "$package_version"
