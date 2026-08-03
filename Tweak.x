@@ -200,8 +200,27 @@ static void DottoUpdateBadges(CFNotificationCenterRef center __unused,
 // colour is used. Folders average the dominant colours of the apps inside them
 // (their own contentsImage is nil on iOS 17).
 
-// Average the dominant colour of every app icon inside a folder.
-static UIColor *DottoAverageFolderColour(SBFolderIcon *folderIcon) {
+// Average colour for a folder badge: run the dominant-colour algorithm on the
+// folder's rendered art (the mini-icon collage) — averaging per-icon dominant
+// colours across diverse apps collapses to brown mud. Falls back to per-icon
+// averaging if the folder art cannot be rendered.
+static UIImage *DottoRenderViewImage(UIView *view) {
+    if (!view || CGRectIsEmpty(view.bounds)) {
+        return nil;
+    }
+    UIGraphicsBeginImageContextWithOptions(view.bounds.size, NO, 0);
+    [view.layer renderInContext:UIGraphicsGetCurrentContext()];
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return image;
+}
+
+static UIColor *DottoAverageFolderColour(SBFolderIcon *folderIcon, UIView *folderImageView) {
+    UIImage *folderArt = DottoRenderViewImage(folderImageView);
+    if (folderArt) {
+        return [folderArt dottoAverageColor];
+    }
+    // Fallback: average the dominant colours of the contained app icons.
     struct SBIconImageInfo info;
     info.size = CGSizeMake(60, 60);
     info.scale = 3.0;
@@ -241,7 +260,8 @@ static UIColor *DottoAverageFolderColour(SBFolderIcon *folderIcon) {
     }
     UIColor *colour = nil;
     if ([self.dottoApplicationIcon isKindOfClass:[SBFolderIcon class]]) {
-        colour = DottoAverageFolderColour((SBFolderIcon *)self.dottoApplicationIcon);
+        UIView *imageView = [self.dottoInfoProvider valueForKey:@"iconImageView"];
+        colour = DottoAverageFolderColour((SBFolderIcon *)self.dottoApplicationIcon, imageView);
     } else if (![self.dottoInfoProvider isKindOfClass:[SBForceTouchAppIconInfoProvider class]]) {
         UIView *imageView = [self.dottoInfoProvider valueForKey:@"iconImageView"];
         if ([imageView respondsToSelector:@selector(contentsImage)]) {
