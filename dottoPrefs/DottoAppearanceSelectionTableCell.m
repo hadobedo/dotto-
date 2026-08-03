@@ -142,7 +142,7 @@ static NSString *const kAppearanceStyle = @"kAppearanceStyle";
         _containerStackView.spacing = 60;
         _containerStackView.translatesAutoresizingMaskIntoConstraints = NO;
 
-        [options enumerateObjectsUsingBlock:^(NSDictionary *option, NSUInteger idx, BOOL *stop) {
+        [options enumerateObjectsUsingBlock:^(NSDictionary *option, NSUInteger idx, BOOL *stop __unused) {
             UIImage *image = [UIImage imageNamed:option[@"image"]
                                         inBundle:prefsBundle
                    compatibleWithTraitCollection:nil];
