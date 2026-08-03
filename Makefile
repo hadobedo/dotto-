@@ -26,7 +26,9 @@ dotto_FILES = Tweak.x
 dotto_CFLAGS = -fobjc-arc -Wall -Wextra -Werror -Ilibdottoplus
 dotto_FRAMEWORKS = UIKit Foundation CoreGraphics
 dotto_LIBRARIES = dottoplus
-dotto_LDFLAGS = $(DOTTO_LIB_LDFLAGS)
+# Categories on SpringBoard classes reference their class symbols; resolve at
+# runtime like classic substrate tweaks.
+dotto_LDFLAGS = $(DOTTO_LIB_LDFLAGS) -undefined dynamic_lookup
 
 # Settings bundle.
 BUNDLE_NAME = dottoPrefs
