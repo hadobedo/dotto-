@@ -1,6 +1,6 @@
-# dotto+ (iOS 17)
+# dotto++
 
-iOS 17 (Dopamine/rootHide, roothide scheme) rebuild of **dotto+ 1.0.6**
+A rootless adaptation of **dotto+ 1.0.6**
 by ConorTheDev & Mirac — notification badges, your style: circle or rounded
 badges tinted with a selected or icon-adaptive colour, no text.
 

@@ -47,7 +47,7 @@ grep -Fx 'Package: me.conorthedev.dotto+' "$package_control" \
 EXPECTED_ARCH="${EXPECTED_ARCH:-iphoneos-arm64e}"
 grep -Fx "Architecture: $EXPECTED_ARCH" "$package_control" \
     || { echo "Architecture mismatch (expected $EXPECTED_ARCH):" >&2; grep '^Architecture:' "$package_control" >&2; exit 1; }
-grep -F 'Depends: firmware (>= 17.0), ellekit, preferenceloader' "$package_control" \
+grep -F 'Depends: firmware (>= 17.0), firmware (<< 18.0), ellekit, preferenceloader' "$package_control" \
     || { echo "Depends mismatch:" >&2; grep '^Depends:' "$package_control" >&2; exit 1; }
 
 printf 'package metadata verified: %s (Version: %s)\n' \
