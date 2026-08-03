@@ -31,18 +31,6 @@ static NSString *const DottoNormalBadgePath =
 static NSString *const DottoCircleBadgePath =
     @"/Library/Application Support/dottoplusplus/badges/circle/SBBadgeBG@3x.png";
 
-#pragma mark - Diagnostics (temporary, gated by DottoDebug prefs key)
-
-// Debug builds log by default; set me.conorthedev.dotto.prefs DottoDebug=NO to silence.
-static BOOL DottoPlusPlusDebugEnabled(void) {
-    NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:@"com.nicksworks.dottoplusplus.prefs"];
-    return [defaults boolForKey:@"DottoDebug"];
-}
-
-#define DPP_LOG(...) do { if (DottoPlusPlusDebugEnabled()) { \
-    NSLog(@"[dotto++] " __VA_ARGS__); \
-} } while (0)
-
 #pragma mark - Badge art
 
 // The shipped badge art occupies only the top-right corner of its 95x95 canvas
@@ -317,94 +305,6 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon, UIVie
     UIImageView *backgroundView = [self valueForKey:@"backgroundView"];
     UIImageView *textView = [self valueForKey:@"textView"];
 
-    if (DottoPlusPlusDebugEnabled()) {
-        static NSMutableSet *dumpedBadges = nil;
-        if (!dumpedBadges) {
-            dumpedBadges = [NSMutableSet set];
-        }
-        BOOL firstDump = ![dumpedBadges containsObject:@((uintptr_t)self)];
-        if (firstDump) {
-            [dumpedBadges addObject:@((uintptr_t)self)];
-            NSMutableArray<NSString *> *siblings = [NSMutableArray array];
-            for (UIView *sibling in self.superview.subviews) {
-                [siblings addObject:[NSString stringWithFormat:@"%@(%@)hidden=%d alpha=%.2f",
-                                     NSStringFromClass([sibling class]), NSStringFromCGRect(sibling.frame),
-                                     sibling.hidden, sibling.alpha]];
-            }
-            NSMutableArray<NSString *> *badgeSublayers = [NSMutableArray array];
-            for (CALayer *sublayer in self.layer.sublayers) {
-                [badgeSublayers addObject:[NSString stringWithFormat:@"%@ contents=%@ bg=%@",
-                                           NSStringFromClass([sublayer class]), sublayer.contents,
-                                           sublayer.backgroundColor]];
-            }
-            NSMutableArray<NSString *> *ancestors = [NSMutableArray array];
-            UIView *ancestor = self.superview;
-            while (ancestor && ancestors.count < 6) {
-                [ancestors addObject:[NSString stringWithFormat:@"%@(%@)", NSStringFromClass([ancestor class]),
-                                      NSStringFromCGRect(ancestor.frame)]];
-                ancestor = ancestor.superview;
-            }
-            DPP_LOG(@"badge %p: subviews=[%@] siblings=[%@] sublayers=[%@] ancestors=[%@]",
-                     self,
-                     [[self.subviews valueForKey:@"description"] componentsJoinedByString:@","],
-                     [siblings componentsJoinedByString:@","],
-                     [badgeSublayers componentsJoinedByString:@","],
-                     [ancestors componentsJoinedByString:@","]);
-        }
-        DPP_LOG(@"dottoPlusPlusApply %p frame=%@ art=%@ tint=%@ alpha=%.2f enabled=%d branch=%@",
-                 self, NSStringFromCGRect(self.frame), [backgroundView image],
-                 [backgroundView tintColor], [backgroundView alpha], [dppPrefs tweakEnabled],
-                 ([self dottoPlusPlusIsIconFolder] || ![dppPrefs adaptiveColorEnabled]) ? @"selected" : @"adaptive");
-    }
-
-    if (![dppPrefs tweakEnabled]) {
-        // Stock restore. The original read valueForKey:@"backgroundImageTuple",
-        // which no longer exists on iOS 17; restore the captured stock image
-        // instead (captured in the enabled path before replacement).
-        if (self.dottoPlusPlusStockBackgroundImage) {
-            [backgroundView setImage:self.dottoPlusPlusStockBackgroundImage];
-        }
-        [textView setHidden:NO];
-        [textView setNeedsLayout];
-        [backgroundView setNeedsLayout];
-        return;
-    }
-
-    NSString *selectedPath = [dppPrefs appearanceStyle] != 0 ? DottoCircleBadgePath
-                                                               : DottoNormalBadgePath;
-    NSString *path = ROOT_PATH_NS(selectedPath);
-    NSDictionary *badgeArt = DottoPlusPlusBadgeArt(path);
-    UIImage *badgeImage = [badgeArt[@"image"]
-                           imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-    DPP_LOG(@"badge image: path=%@ exists=%d image=%@ layerContents=%@ textImageTuple=%@",
-             path, [[NSFileManager defaultManager] fileExistsAtPath:path], badgeImage,
-             self.layer.contents, [[self valueForKey:@"textImageTuple"] valueForKey:@"image"]);
-
-    if (!self.dottoPlusPlusStockBackgroundImage) {
-        self.dottoPlusPlusStockBackgroundImage = [backgroundView image];
-    }
-    [backgroundView setImage:badgeImage];
-
-    UIColor *colour;
-    if ([dppPrefs adaptiveColorEnabled] && ![self dottoPlusPlusIsIconFolder]) {
-        colour = [self dottoPlusPlusBadgeColour];
-    } else {
-        colour = [dppPrefs dottoSelectedColour];
-    }
-    if ([dppPrefs pastelColorsEnabled]) {
-        colour = [colour lighterColor];
-    }
-    [backgroundView setTintColor:colour];
-    // Render the badge art at its native point size (crisp, no upscaling);
-    // the original stretched the art across a 26pt frame, which pixelates.
-    CGSize artSize = badgeImage.size;
-    if (artSize.width < 1.0 || artSize.height < 1.0) {
-        artSize = CGSizeMake(26, 26);
-    }
-    [backgroundView setFrame:CGRectMake(0, 0, artSize.width, artSize.height)];
-    // Art center derived from the asset's own geometry (hangs the dot off the
-    // icon corner, matching the original's effective placement).
-    [backgroundView setCenter:[badgeArt[@"center"] CGPointValue]];
     [backgroundView setAlpha:[dppPrefs transparency]];
     [textView setHidden:YES];
     // Hide any other badge-internal rendering (themed stock pill, incoming
@@ -528,7 +428,6 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon, UIVie
 
 - (void)configureForIcon:(id)icon infoProvider:(id)provider {
     %orig;
-    DPP_LOG(@"configureForIcon icon=%@ provider=%@", icon, provider);
     self.dottoPlusPlusApplicationIcon = icon;
     self.dottoPlusPlusInfoProvider = provider;
     [self dottoPlusPlusApply];
@@ -571,9 +470,5 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon, UIVie
                                         (CFStringRef)DottoReloadNotification,
                                         NULL,
                                         CFNotificationSuspensionBehaviorDeliverImmediately);
-        DPP_LOG(@"ctor: loaded, enabled=%d style=%ld adaptive=%d pastel=%d alpha=%.2f",
-                 [dppPrefs tweakEnabled], (long)[dppPrefs appearanceStyle],
-                 [dppPrefs adaptiveColorEnabled], [dppPrefs pastelColorsEnabled],
-                 [dppPrefs transparency]);
     }
 }
