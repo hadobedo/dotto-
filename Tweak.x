@@ -47,19 +47,28 @@ static BOOL DottoPlusPlusDebugEnabled(void) {
 
 // The shipped badge art occupies only the top-right corner of its 95x95 canvas
 // (~36x36 px). Crop it to its opaque bounding box so the dot fills the frame.
-static UIImage *DottoPlusPlusCroppedBadgeImage(NSString *path) {
-    static NSMutableDictionary<NSString *, UIImage *> *cache = nil;
+// Load a badge art image, crop it to its opaque bounding box, and return the
+// art's center mapped into the 26x26 badge view (canvas center / canvas size
+// * 26). Deriving the position from the art itself keeps the placement exact
+// if the assets ever change.
+static NSDictionary *DottoPlusPlusBadgeArt(NSString *path) {
+    static NSMutableDictionary<NSString *, NSDictionary *> *cache = nil;
     if (!cache) {
         cache = [NSMutableDictionary dictionary];
     }
-    UIImage *cached = cache[path];
+    NSDictionary *cached = cache[path];
     if (cached) {
         return cached;
     }
     UIImage *image = [UIImage imageWithContentsOfFile:path];
     CGImageRef cgImage = image.CGImage;
     if (!cgImage) {
-        return image;
+        NSDictionary *fallback = @{
+            @"image" : image ?: [UIImage new],
+            @"center" : [NSValue valueWithCGPoint:CGPointMake(13, 13)],
+        };
+        cache[path] = fallback;
+        return fallback;
     }
     size_t width = CGImageGetWidth(cgImage);
     size_t height = CGImageGetHeight(cgImage);
@@ -90,18 +99,29 @@ static UIImage *DottoPlusPlusCroppedBadgeImage(NSString *path) {
                                                           scale:image.scale
                                                     orientation:image.imageOrientation];
                     CGImageRelease(cropped);
-                    cache[path] = result;
+                    // Art center within the canvas, scaled into the 26pt badge view.
+                    CGFloat centerX = (minX + maxX + 1) / 2.0 / (double)width * 26.0;
+                    CGFloat centerY = (minY + maxY + 1) / 2.0 / (double)height * 26.0;
+                    NSDictionary *art = @{
+                        @"image" : result,
+                        @"center" : [NSValue valueWithCGPoint:CGPointMake(centerX, centerY)],
+                    };
+                    cache[path] = art;
                     free(pixels);
                     CGColorSpaceRelease(colorSpace);
-                    return result;
+                    return art;
                 }
             }
         }
         free(pixels);
     }
     CGColorSpaceRelease(colorSpace);
-    cache[path] = image;
-    return image;
+    NSDictionary *fallback = @{
+        @"image" : image ?: [UIImage new],
+        @"center" : [NSValue valueWithCGPoint:CGPointMake(13, 13)],
+    };
+    cache[path] = fallback;
+    return fallback;
 }
 
 #pragma mark - SBIconBadgeView associated state + new methods
@@ -341,7 +361,8 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon, UIVie
 
     NSString *path = jbroot([dppPrefs appearanceStyle] != 0 ? DottoCircleBadgePath
                                                                : DottoNormalBadgePath);
-    UIImage *badgeImage = [DottoPlusPlusCroppedBadgeImage(path)
+    NSDictionary *badgeArt = DottoPlusPlusBadgeArt(path);
+    UIImage *badgeImage = [badgeArt[@"image"]
                            imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
     DPP_LOG(@"badge image: path=%@ exists=%d image=%@ layerContents=%@ textImageTuple=%@",
              path, [[NSFileManager defaultManager] fileExistsAtPath:path], badgeImage,
@@ -369,9 +390,9 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon, UIVie
         artSize = CGSizeMake(26, 26);
     }
     [backgroundView setFrame:CGRectMake(0, 0, artSize.width, artSize.height)];
-    // Original effective art position: canvas center (66.5, 27.5) of 95 -> 26pt
-    // badge view => (18.2, 7.5); places the dot hanging off the icon corner.
-    [backgroundView setCenter:CGPointMake(18.2, 7.5)];
+    // Art center derived from the asset's own geometry (hangs the dot off the
+    // icon corner, matching the original's effective placement).
+    [backgroundView setCenter:[badgeArt[@"center"] CGPointValue]];
     [backgroundView setAlpha:[dppPrefs transparency]];
     [textView setHidden:YES];
     // Hide any other badge-internal rendering (themed stock pill, incoming

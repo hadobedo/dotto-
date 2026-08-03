@@ -14,7 +14,7 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
         self.preferences = [DottoPlusPlusPreferences sharedInstance];
         [self.preferences reloadPreferences];
 
-        UISwitch *enabledSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(0, 0, 51, 30)];
+        UISwitch *enabledSwitch = [[UISwitch alloc] init]; // intrinsic sizing
         [enabledSwitch setOn:[self.preferences tweakEnabled] animated:NO];
         [enabledSwitch addTarget:self action:@selector(switchToggled:)
                 forControlEvents:UIControlEventValueChanged];

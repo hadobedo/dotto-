@@ -46,7 +46,7 @@ static UIColor *DottoPlusPlusColorFromHexString(NSString *hexString) {
 - (instancetype)initWithColor:(UIColor *)color forController:(id)controller {
     if ((self = [super initWithFrame:CGRectMake(0, 0, 30, 30)])) {
         self.hostController = controller;
-        self.layer.cornerRadius = 15.0;
+        self.layer.cornerRadius = CGRectGetWidth(self.bounds) / 2.0;
 
         self.preferences = [DottoPlusPlusPreferences sharedInstance];
         [self.preferences reloadPreferences];
@@ -96,8 +96,9 @@ static UIColor *DottoPlusPlusColorFromHexString(NSString *hexString) {
 }
 
 - (void)addOutlineView {
-    self.outlineView = [[UIView alloc] initWithFrame:CGRectMake(2.5, 2.5, 25, 25)];
-    self.outlineView.layer.cornerRadius = 12.5;
+    // Outline is the swatch bounds inset by a fixed amount; radius follows.
+    self.outlineView = [[UIView alloc] initWithFrame:CGRectInset(self.bounds, 2.5, 2.5)];
+    self.outlineView.layer.cornerRadius = CGRectGetWidth(self.outlineView.bounds) / 2.0;
     self.outlineView.layer.borderWidth = 2.5;
 
     UIColor *outlineColor = [UIColor systemBackgroundColor];
