@@ -17,12 +17,16 @@ libdottoplus_INSTALL_PATH = /usr/local/lib
 libdottoplus_CFLAGS = -fobjc-arc -Wall -Wextra -Werror -Ilibdottoplus
 libdottoplus_FRAMEWORKS = UIKit CoreGraphics Foundation
 
+# Theos-built libraries live in the object dir; add it to the linker search path.
+DOTTO_LIB_LDFLAGS = -L$(THEOS_OBJ_DIR)
+
 # SpringBoard badge tweak.
 TWEAK_NAME = dotto
 dotto_FILES = Tweak.x
 dotto_CFLAGS = -fobjc-arc -Wall -Wextra -Werror -Ilibdottoplus
 dotto_FRAMEWORKS = UIKit Foundation CoreGraphics
 dotto_LIBRARIES = dottoplus
+dotto_LDFLAGS = $(DOTTO_LIB_LDFLAGS)
 
 # Settings bundle.
 BUNDLE_NAME = dottoPrefs
@@ -38,6 +42,7 @@ dottoPrefs_CFLAGS = -fobjc-arc -Wall -Wextra -Werror -Ilibdottoplus
 dottoPrefs_FRAMEWORKS = UIKit Foundation
 dottoPrefs_PRIVATE_FRAMEWORKS = Preferences
 dottoPrefs_LIBRARIES = dottoplus
+dottoPrefs_LDFLAGS = $(DOTTO_LIB_LDFLAGS)
 
 include $(THEOS_MAKE_PATH)/library.mk
 include $(THEOS_MAKE_PATH)/tweak.mk
