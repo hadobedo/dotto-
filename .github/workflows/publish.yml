@@ -252,6 +252,8 @@ jobs:
                   if ": " in line:
                       key, value = line.split(": ", 1)
                       result[key] = value
+                      if key.lower() == "sileodepiction":
+                          result["SileoDepiction"] = value
               return result
 
           def stanzas(text):
