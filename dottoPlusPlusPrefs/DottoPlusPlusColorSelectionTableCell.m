@@ -2,7 +2,6 @@
 
 #import "DottoPlusPlusColorItemView.h"
 #import "DottoPlusPlusColorRowStackView.h"
-#import "DottoPrefsCompat.h"
 
 #import <Preferences/PSSpecifier.h>
 
@@ -21,29 +20,15 @@ static const double kCellHeight = 90.0;
         self.preferences = [DottoPlusPlusPreferences sharedInstance];
         [self.preferences reloadPreferences];
 
-        // First row: 6 colors.
-        NSArray<UIColor *> *firstRowColors = @[
-            [UIColor colorWithRed:232.0 / 255.0 green:53.0 / 255.0 blue:83.0 / 255.0 alpha:1.0],  // #E83553
-            [UIColor colorWithRed:255.0 / 255.0 green:59.0 / 255.0 blue:48.0 / 255.0 alpha:1.0],  // #FF3B30
-            [UIColor colorWithRed:255.0 / 255.0 green:149.0 / 255.0 blue:0.0 / 255.0 alpha:1.0],  // #FF9500
-            [UIColor colorWithRed:255.0 / 255.0 green:204.0 / 255.0 blue:0.0 / 255.0 alpha:1.0],  // #FFCC00
-            [UIColor colorWithRed:52.0 / 255.0 green:199.0 / 255.0 blue:89.0 / 255.0 alpha:1.0],  // #34C759
-            [UIColor colorWithRed:90.0 / 255.0 green:200.0 / 255.0 blue:250.0 / 255.0 alpha:1.0], // #5AC8FA
-        ];
-        self.firstColorRow = [[DottoPlusPlusColorRowStackView alloc] initWithColors:firstRowColors
-                                                              forController:self];
+        NSArray<UIColor *> *palette = [DottoPlusPlusColorRowStackView standardColors];
+        NSArray<UIColor *> *firstRowColors = [palette subarrayWithRange:NSMakeRange(0, 6)];
+        NSMutableArray<UIColor *> *secondRowColors = [[palette subarrayWithRange:NSMakeRange(6, 5)] mutableCopy];
+        [secondRowColors addObject:[UIColor clearColor]];
 
-        // Second row: 5 colors + custom color picker (clear swatch).
-        NSArray<UIColor *> *secondRowColors = @[
-            [UIColor colorWithRed:0.0 / 255.0 green:122.0 / 255.0 blue:255.0 / 255.0 alpha:1.0],  // #007AFF
-            [UIColor colorWithRed:175.0 / 255.0 green:82.0 / 255.0 blue:222.0 / 255.0 alpha:1.0], // #AF52DE
-            [UIColor colorWithRed:255.0 / 255.0 green:45.0 / 255.0 blue:85.0 / 255.0 alpha:1.0],  // #FF2D55
-            [UIColor whiteColor],
-            [UIColor colorWithRed:17.0 / 255.0 green:17.0 / 255.0 blue:17.0 / 255.0 alpha:1.0],   // #111111
-            [UIColor clearColor],
-        ];
+        self.firstColorRow = [[DottoPlusPlusColorRowStackView alloc] initWithColors:firstRowColors
+                                                                         forController:self];
         self.secondColorRow = [[DottoPlusPlusColorRowStackView alloc] initWithColors:secondRowColors
-                                                               forController:self];
+                                                                          forController:self];
 
         self.colorStackView = [[UIStackView alloc] init];
         self.colorStackView.axis = UILayoutConstraintAxisVertical;
@@ -64,14 +49,34 @@ static const double kCellHeight = 90.0;
             [self.colorStackView.bottomAnchor constraintEqualToAnchor:self.contentView.bottomAnchor constant:-10],
             [self.heightAnchor constraintEqualToConstant:kCellHeight],
         ]];
+        [self updateAdaptiveColorEnabled:[self.preferences adaptiveColorEnabled]];
     }
     return self;
+}
+
+- (void)updateAdaptiveColorEnabled:(BOOL)adaptiveEnabled {
+    BOOL enabled = !adaptiveEnabled;
+    self.userInteractionEnabled = enabled;
+    self.contentView.userInteractionEnabled = enabled;
+    self.contentView.alpha = enabled ? 1.0 : 0.439216;
+    self.colorStackView.userInteractionEnabled = enabled;
+
+    for (DottoPlusPlusColorRowStackView *row in @[self.firstColorRow, self.secondColorRow]) {
+        row.userInteractionEnabled = enabled;
+        for (UIView *itemView in row.arrangedSubviews) {
+            itemView.userInteractionEnabled = enabled;
+            if ([itemView isKindOfClass:[DottoPlusPlusColorItemView class]]) {
+                [(DottoPlusPlusColorItemView *)itemView updateAdaptiveColorEnabled:adaptiveEnabled];
+            }
+        }
+    }
 }
 
 - (void)updateCircles {
     NSArray<DottoPlusPlusColorItemView *> *items = [self.firstColorRow.arrangedSubviews
                                             arrayByAddingObjectsFromArray:self.secondColorRow.arrangedSubviews];
-    UIColor *selectedColour = [DottoPlusPlusColorRowStackView selectedColor];
+    [self.preferences reloadPreferences];
+    UIColor *selectedColour = [self.preferences dottoSelectedColour];
     for (DottoPlusPlusColorItemView *item in items) {
         if (item.type == 1) {
             // Custom picker swatch: outlined when the selection is a custom color.

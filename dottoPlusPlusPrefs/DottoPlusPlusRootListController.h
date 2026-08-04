@@ -8,8 +8,6 @@
 
 @property (nonatomic, strong) DottoPlusPlusPreferences *preferences;
 
-- (void)switchToggled:(UISwitch *)sender;
-- (void)setCellForRowAtIndexPath:(NSIndexPath *)indexPath enabled:(BOOL)enabled;
-- (UIImage *)symbolImageNamed:(NSString *)name color:(UIColor *)color;
+- (UIImage *)symbolImageNamed:(NSString *)name;
 
 @end

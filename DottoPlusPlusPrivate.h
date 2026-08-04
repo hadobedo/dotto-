@@ -10,7 +10,10 @@ struct SBIconImageInfo {
 @class SBIconListModel;
 
 // Minimal SpringBoard/SpringBoardHome private declarations for the dotto+ rebuild.
-// All selectors below are verified against iOS 17.1 runtime headers.
+// The common selectors were checked against the iOS 17.1 runtime-header dump;
+// that does not prove availability on every iOS 15/16 point release. The
+// accessoryCenterForIconBounds: declaration is iOS 17-only and is installed
+// conditionally in Tweak.x.
 
 @interface SBIcon : NSObject
 @property (nonatomic, readonly, copy) NSString *uniqueIdentifier;
@@ -45,4 +48,5 @@ struct SBIconImageInfo {
 
 @interface SBIconView : UIView
 - (CGPoint)_centerForAccessoryView;
+- (CGPoint)accessoryCenterForIconBounds:(CGRect)iconBounds API_AVAILABLE(ios(17.0));
 @end

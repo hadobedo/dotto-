@@ -1,9 +1,21 @@
-.theos/
-packages/
+# Theos and package build output
+/.theos/
+/packages/
+/deb_work/
+/deb_extracted/
+/*.deb
 *.deb
-deb_work/
-deb_extracted/
-dotto
-ghidra/
-ANALYSIS.md
+/build/
+/artifacts/
+
+# Local reverse-engineering output
+/ghidra/
+*.dylib
+*.o
+*.a
+
+# Local tools, sessions, and generated logs
+/.pi-subagents/
+*.log
+.*.swp
 .DS_Store
