@@ -1,9 +1,10 @@
 /* dotto++ preferences — en */
-"A respring is recommended after disabling dotto++" = "A respring is recommended after disabling dotto++";
 "Appearance" = "Appearance";
 "Colour" = "Colour";
 "Adaptive Colour" = "Adaptive Colour";
 "Use Pastel Colours" = "Use Pastel Colours";
+"Alt. Pastel Algorithm" = "Alt. Pastel Algorithm";
+"Use OKLab/OKLCH colour adjustment" = "Use OKLab/OKLCH colour adjustment";
 "Opacity" = "Opacity";
 "Credits & Source" = "Credits & Source";
 "Nick's Works" = "Nick's Works";

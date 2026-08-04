@@ -2,9 +2,17 @@
 
 // Drop-in replacement for the original libdottoplus DottoPlusPlusPreferences singleton.
 // Storage: NSUserDefaults suite "com.nicksworks.dottoplusplus.prefs".
-@interface DottoPlusPlusPreferences : NSObject
+FOUNDATION_EXPORT NSString *const DottoPlusPlusPreferenceSuite;
+FOUNDATION_EXPORT NSString *const DottoPlusPlusReloadNotification;
+FOUNDATION_EXPORT NSString *const DottoPlusPlusEnabledKey;
+FOUNDATION_EXPORT NSString *const DottoPlusPlusAppearanceStyleKey;
+FOUNDATION_EXPORT NSString *const DottoPlusPlusSelectedColorKey;
+FOUNDATION_EXPORT NSString *const DottoPlusPlusAdaptiveColorKey;
+FOUNDATION_EXPORT NSString *const DottoPlusPlusTransparencyKey;
+FOUNDATION_EXPORT NSString *const DottoPlusPlusPastelColorKey;
+FOUNDATION_EXPORT NSString *const DottoPlusPlusPerceptualPastelColorKey;
 
-@property (nonatomic, strong) NSDictionary *preferences;
+@interface DottoPlusPlusPreferences : NSObject
 
 + (instancetype)sharedInstance;
 
@@ -14,6 +22,7 @@
 - (BOOL)tweakEnabled;
 - (BOOL)adaptiveColorEnabled;
 - (BOOL)pastelColorsEnabled;
+- (BOOL)perceptualPastelColorsEnabled;
 - (UIColor *)dottoSelectedColour;
 - (NSInteger)appearanceStyle;
 - (CGFloat)transparency;

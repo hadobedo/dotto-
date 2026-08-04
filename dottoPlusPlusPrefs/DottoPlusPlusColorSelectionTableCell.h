@@ -14,6 +14,7 @@
 
 - (instancetype)initWithSpecifier:(PSSpecifier *)specifier;
 - (void)updateCircles;
+- (void)updateAdaptiveColorEnabled:(BOOL)adaptiveEnabled;
 - (double)preferredHeightForWidth:(double)width;
 
 @end

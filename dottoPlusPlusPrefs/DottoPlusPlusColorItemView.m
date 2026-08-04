@@ -6,7 +6,10 @@
 #import <UIKit/UIColorPickerViewController.h>
 #import <math.h>
 
-static NSString *const kSelectedColor = @"kSelectedColor";
+@interface DottoPlusPlusColorItemView ()
+@property (nonatomic, strong) UIColorPickerViewController *colorPicker;
+@end
+
 static NSString *const kColourPickerImagePath =
     @"/Library/PreferenceBundles/dottoPlusPlusPrefs.bundle/colourpicker.png";
 
@@ -43,7 +46,8 @@ static UIColor *DottoPlusPlusColorFromHexString(NSString *hexString) {
 
 @implementation DottoPlusPlusColorItemView
 
-- (instancetype)initWithColor:(UIColor *)color forController:(id)controller {
+- (instancetype)initWithColor:(UIColor *)color
+                  forController:(DottoPlusPlusColorRowStackView *)controller {
     if ((self = [super initWithFrame:CGRectMake(0, 0, 30, 30)])) {
         self.hostController = controller;
         self.layer.cornerRadius = CGRectGetWidth(self.bounds) / 2.0;
@@ -113,16 +117,37 @@ static UIColor *DottoPlusPlusColorFromHexString(NSString *hexString) {
     [self addSubview:self.outlineView];
 }
 
+- (void)updateAdaptiveColorEnabled:(BOOL)adaptiveEnabled {
+    BOOL enabled = !adaptiveEnabled;
+    self.userInteractionEnabled = enabled;
+    self.tapGestureRecognizer.enabled = enabled;
+    if (adaptiveEnabled && self.colorPicker.presentingViewController) {
+        [self.colorPicker dismissViewControllerAnimated:YES completion:nil];
+    }
+}
+
 - (void)buttonTapped:(UITapGestureRecognizer *)sender {
+    (void)sender;
+    [self.preferences reloadPreferences];
+    if ([self.preferences adaptiveColorEnabled]) {
+        return;
+    }
     NSData *archivedColour = [NSKeyedArchiver archivedDataWithRootObject:self.color
                                                   requiringSecureCoding:NO error:NULL];
-    [self.preferences writeValue:archivedColour forKey:kSelectedColor];
-    [DottoPlusPlusColorRowStackView setSelectedColor:self.color];
+    [self.preferences writeValue:archivedColour forKey:DottoPlusPlusSelectedColorKey];
     [self.hostController updateCircles];
 }
 
 - (void)showColorPicker:(UITapGestureRecognizer *)sender {
-    UIColorPickerViewController *picker = self.hostController.colorPicker;
+    (void)sender;
+    [self.preferences reloadPreferences];
+    if ([self.preferences adaptiveColorEnabled]) {
+        return;
+    }
+    if (!self.colorPicker) {
+        self.colorPicker = [UIColorPickerViewController new];
+    }
+    UIColorPickerViewController *picker = self.colorPicker;
     picker.delegate = self;
     picker.selectedColor = [self.preferences dottoSelectedColour];
 
@@ -139,13 +164,18 @@ static UIColor *DottoPlusPlusColorFromHexString(NSString *hexString) {
     while (presenter.presentedViewController) {
         presenter = presenter.presentedViewController;
     }
+    if (!presenter) {
+        return;
+    }
     [presenter presentViewController:picker animated:YES completion:nil];
 }
 
 #pragma mark - UIColorPickerViewControllerDelegate
 
 - (void)colorPickerViewControllerDidSelectColor:(UIColorPickerViewController *)viewController {
-    [self didApplyiOS14ColorPicker:viewController];
+    (void)viewController;
+    // Do not persist or notify SpringBoard for every drag update. The picker
+    // owns the in-progress value; commit it once when the picker closes.
 }
 
 - (void)colorPickerViewControllerDidFinish:(UIColorPickerViewController *)viewController {
@@ -154,12 +184,17 @@ static UIColor *DottoPlusPlusColorFromHexString(NSString *hexString) {
 
 - (void)didApplyiOS14ColorPicker:(UIColorPickerViewController *)viewController {
     UIColor *pickedColor = viewController.selectedColor;
+    if (!pickedColor) {
+        return;
+    }
     NSString *hex = DottoPlusPlusHexStringFromColor(pickedColor);
     UIColor *normalized = hex ? DottoPlusPlusColorFromHexString(hex) : pickedColor;
+    if (!normalized) {
+        return;
+    }
     NSData *archivedColour = [NSKeyedArchiver archivedDataWithRootObject:normalized
                                                   requiringSecureCoding:NO error:NULL];
-    [self.preferences writeValue:archivedColour forKey:kSelectedColor];
-    [DottoPlusPlusColorRowStackView setSelectedColor:pickedColor];
+    [self.preferences writeValue:archivedColour forKey:DottoPlusPlusSelectedColorKey];
     [self.hostController updateCircles];
 }
 

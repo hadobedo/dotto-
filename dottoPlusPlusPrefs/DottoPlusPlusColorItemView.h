@@ -16,8 +16,10 @@
 // 0 = standard color swatch, 1 = custom color picker swatch.
 @property (nonatomic, assign) NSInteger type;
 
-- (instancetype)initWithColor:(UIColor *)color forController:(id)controller;
+- (instancetype)initWithColor:(UIColor *)color
+                  forController:(DottoPlusPlusColorRowStackView *)controller;
 - (void)addOutlineView;
+- (void)updateAdaptiveColorEnabled:(BOOL)adaptiveEnabled;
 - (void)buttonTapped:(UITapGestureRecognizer *)sender;
 - (void)showColorPicker:(UITapGestureRecognizer *)sender;
 

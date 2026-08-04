@@ -1,12 +1,14 @@
 #import "DottoPlusPlusRootListController.h"
 
 #import "DottoPlusPlusLocalization.h"
-#import "DottoPrefsCompat.h"
+#import "DottoPlusPlusColorSelectionTableCell.h"
 
 #import <Preferences/PSSpecifier.h>
 
-static NSString *const kEnabled = @"kEnabled";
-static NSString *const kAdaptiveColor = @"kAdaptiveColor";
+@interface DottoPlusPlusRootListController ()
+@property (nonatomic, strong) PSSpecifier *pastelSpecifier;
+@property (nonatomic, strong) PSSpecifier *perceptualPastelSpecifier;
+@end
 
 @implementation DottoPlusPlusRootListController
 
@@ -15,12 +17,6 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
         self.preferences = [DottoPlusPlusPreferences sharedInstance];
         [self.preferences reloadPreferences];
 
-        UISwitch *enabledSwitch = [[UISwitch alloc] init]; // intrinsic sizing
-        [enabledSwitch setOn:[self.preferences tweakEnabled] animated:NO];
-        [enabledSwitch addTarget:self action:@selector(switchToggled:)
-                forControlEvents:UIControlEventValueChanged];
-        self.navigationItem.rightBarButtonItem =
-            [[UIBarButtonItem alloc] initWithCustomView:enabledSwitch];
     }
     return self;
 }
@@ -43,17 +39,38 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
             [self localizeSpecifier:specifier];
             NSString *key = [specifier propertyForKey:@"key"];
             if ([key isEqualToString:@"kByRow"]) {
-                [specifier setProperty:[self symbolImageNamed:@"person.crop.circle"
-                                                        color:[UIColor systemBlueColor]]
+                [specifier setProperty:[self symbolImageNamed:@"person.crop.circle"]
                                 forKey:PSIconImageKey];
             } else if ([key isEqualToString:@"kOriginalLink"]) {
-                [specifier setProperty:[self symbolImageNamed:@"link"
-                                                        color:[UIColor systemBlueColor]]
+                [specifier setProperty:[self symbolImageNamed:@"link"]
                                 forKey:PSIconImageKey];
+            } else if ([key isEqualToString:DottoPlusPlusPastelColorKey]) {
+                self.pastelSpecifier = specifier;
+            } else if ([key isEqualToString:DottoPlusPlusPerceptualPastelColorKey]) {
+                self.perceptualPastelSpecifier = specifier;
             }
+        }
+        if (![self.preferences pastelColorsEnabled] && self.perceptualPastelSpecifier) {
+            [_specifiers removeObject:self.perceptualPastelSpecifier];
         }
     }
     return _specifiers;
+}
+
+- (void)updatePerceptualPastelSpecifierVisibilityAnimated:(BOOL)animated {
+    if (!self.perceptualPastelSpecifier || !self.specifiers) {
+        return;
+    }
+
+    BOOL shouldShow = [self.preferences pastelColorsEnabled];
+    BOOL isShown = [self.specifiers containsObject:self.perceptualPastelSpecifier];
+    if (shouldShow && !isShown && self.pastelSpecifier) {
+        [self insertSpecifier:self.perceptualPastelSpecifier
+          afterSpecifier:self.pastelSpecifier
+                  animated:animated];
+    } else if (!shouldShow && isShown) {
+        [self removeSpecifier:self.perceptualPastelSpecifier animated:animated];
+    }
 }
 
 // Replace plist-driven labels with the bundle's localized strings. Group
@@ -73,7 +90,7 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
     }
 }
 
-- (UIImage *)symbolImageNamed:(NSString *)name color:(UIColor *)color {
+- (UIImage *)symbolImageNamed:(NSString *)name {
     UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20
                                                                                         weight:UIImageSymbolWeightRegular];
     UIImage *image = [UIImage systemImageNamed:name withConfiguration:config];
@@ -82,41 +99,49 @@ static NSString *const kAdaptiveColor = @"kAdaptiveColor";
 
 // Credits footer: rendered through the table delegate for the last section
 // (PSListController's footerViewClass plist hook does not fire on iOS 17).
-// The respring note renders directly beneath the Opacity rows with standard
-// footer styling, then the compact credits block follows with no dead space.
 
-- (void)switchToggled:(UISwitch *)sender {
-    [self.preferences writeValue:@([sender isOn]) forKey:kEnabled];
-}
-
-- (void)setCellForRowAtIndexPath:(NSIndexPath *)indexPath enabled:(BOOL)enabled {
-    UITableView *table = [self table];
-    UITableViewCell *cell = [self tableView:table cellForRowAtIndexPath:indexPath];
-    if (!cell) {
+- (void)updateVisibleColorCellsWithAdaptiveEnabled:(BOOL)adaptiveEnabled {
+    UITableView *table = self.table;
+    if (!table) {
         return;
     }
-    [cell setUserInteractionEnabled:enabled];
-    [cell.contentView setAlpha:enabled ? 1.0 : 0.439216];
+    for (NSIndexPath *indexPath in table.indexPathsForVisibleRows) {
+        UITableViewCell *cell = [table cellForRowAtIndexPath:indexPath];
+        if ([cell isKindOfClass:[DottoPlusPlusColorSelectionTableCell class]]) {
+            [(DottoPlusPlusColorSelectionTableCell *)cell updateAdaptiveColorEnabled:adaptiveEnabled];
+        }
+    }
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    [self.preferences reloadPreferences];
+    [self updatePerceptualPastelSpecifierVisibilityAnimated:NO];
+    [self updateVisibleColorCellsWithAdaptiveEnabled:[self.preferences adaptiveColorEnabled]];
+}
+
+- (void)tableView:(UITableView *)tableView
+ willDisplayCell:(UITableViewCell *)cell
+forRowAtIndexPath:(NSIndexPath *)indexPath {
+    (void)tableView;
+    (void)indexPath;
+    if ([cell isKindOfClass:[DottoPlusPlusColorSelectionTableCell class]]) {
+        [self.preferences reloadPreferences];
+        [(DottoPlusPlusColorSelectionTableCell *)cell
+            updateAdaptiveColorEnabled:[self.preferences adaptiveColorEnabled]];
+    }
 }
 
 - (void)setPreferenceValue:(id)value specifier:(PSSpecifier *)specifier {
-    if ([[specifier propertyForKey:@"key"] isEqualToString:kAdaptiveColor]) {
-        // The swatch row (section 2, row 0 — section 0 is the respring note)
-        // is greyed out while adaptive colouring is on; the selected colour
-        // only matters when it is off.
-        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:0 inSection:2];
-        [self setCellForRowAtIndexPath:indexPath enabled:![value boolValue]];
-    }
+    NSString *key = [specifier propertyForKey:@"key"];
     [super setPreferenceValue:value specifier:specifier];
-}
-
-- (id)readPreferenceValue:(PSSpecifier *)specifier {
-    if ([[specifier propertyForKey:@"key"] isEqualToString:kAdaptiveColor]) {
-        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:0 inSection:2];
-        [self setCellForRowAtIndexPath:indexPath
-                               enabled:![self.preferences adaptiveColorEnabled]];
+    if ([key isEqualToString:DottoPlusPlusPastelColorKey]) {
+        [self.preferences reloadPreferences];
+        [self updatePerceptualPastelSpecifierVisibilityAnimated:YES];
+    } else if ([key isEqualToString:DottoPlusPlusAdaptiveColorKey]) {
+        [self.preferences reloadPreferences];
+        [self updateVisibleColorCellsWithAdaptiveEnabled:[self.preferences adaptiveColorEnabled]];
     }
-    return [super readPreferenceValue:specifier];
 }
 
 @end

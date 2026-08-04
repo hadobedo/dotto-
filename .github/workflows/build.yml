@@ -87,6 +87,17 @@ jobs:
       - name: Check out dotto17
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
+      - name: Read package version
+        id: source-version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version_count=$(awk '$1 == "Version:" { count++ } END { print count + 0 }' control)
+          version=$(awk '$1 == "Version:" && NF == 2 { print $2 }' control)
+          test "$version_count" -eq 1
+          test -n "$version"
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+
       - name: Download built packages
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
@@ -95,6 +106,40 @@ jobs:
           path: packages
 
       - name: Publish to dev repo
+        env:
+          EXPECTED_VERSION: ${{ steps.source-version.outputs.version }}
         run: |
           DEBS="$(ls packages/*.deb | tr '\n' ' ')" \
           scripts/publish_repo.sh
+
+      - name: Verify development feed publication
+        shell: bash
+        env:
+          EXPECTED_VERSION: ${{ steps.source-version.outputs.version }}
+        run: |
+          set -euo pipefail
+          # GitHub Pages can lag behind the repo push; verify the source feed
+          # immediately, then let the Pages CDN catch up asynchronously.
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 \
+            "https://raw.githubusercontent.com/hadobedo/repo/main/dev/Packages?commit=${GITHUB_SHA}" \
+            > /tmp/dotto-dev-Packages
+          grep -F 'Package: com.nicksworks.dottoplusplus' /tmp/dotto-dev-Packages
+          grep -F "Version: ${EXPECTED_VERSION}" /tmp/dotto-dev-Packages
+          grep -F 'Architecture: iphoneos-arm64' /tmp/dotto-dev-Packages
+          grep -F 'Architecture: iphoneos-arm64e' /tmp/dotto-dev-Packages
+          grep -F 'Icon: https://hadobedo.github.io/repo/assets/dottoplusplus.png' /tmp/dotto-dev-Packages
+          grep -F 'SileoDepiction: https://hadobedo.github.io/repo/depictions/com.nicksworks.dottoplusplus.json' /tmp/dotto-dev-Packages
+          grep -F 'Depiction: https://hadobedo.github.io/repo/depictions/com.nicksworks.dottoplusplus.html' /tmp/dotto-dev-Packages
+          for path in \
+            assets/dottoplusplus.png \
+            depictions/com.nicksworks.dottoplusplus.json \
+            depictions/com.nicksworks.dottoplusplus.html \
+            dev/assets/dottoplusplus.png \
+            dev/depictions/com.nicksworks.dottoplusplus.json \
+            dev/depictions/com.nicksworks.dottoplusplus.html; do
+            curl --fail --silent --show-error --retry 5 --retry-delay 5 \
+              "https://raw.githubusercontent.com/hadobedo/repo/main/$path?commit=${GITHUB_SHA}" \
+              >/dev/null
+          done
+          echo 'development feed repository publication verified'
+          echo 'development feed URL: https://hadobedo.github.io/repo/dev/'

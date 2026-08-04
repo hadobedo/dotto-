@@ -4,8 +4,6 @@
 
 #import "DottoPlusPlusPreferences.h"
 
-static NSString *const kAppearanceStyle = @"kAppearanceStyle";
-
 // Faithful reimplementation of the original me.conorthedev.libappearancecell
 // AppearanceSelectionTableCell (iOS 13-style appearance selector): 60pt icon
 // examples, 17pt captions, circle checkmark, haptics, direct pref write.
@@ -94,6 +92,10 @@ static NSString *const kAppearanceStyle = @"kAppearanceStyle";
         [UIView animateWithDuration:0.1 delay:0 options:UIViewAnimationOptionCurveEaseInOut
                          animations:^{ self.alpha = 1; } completion:nil];
         [self selectType];
+    } else if (sender.state == UIGestureRecognizerStateCancelled ||
+               sender.state == UIGestureRecognizerStateFailed) {
+        [UIView animateWithDuration:0.1 delay:0 options:UIViewAnimationOptionCurveEaseInOut
+                         animations:^{ self.alpha = 1; } completion:nil];
     }
 }
 
@@ -106,7 +108,7 @@ static NSString *const kAppearanceStyle = @"kAppearanceStyle";
     UIImpactFeedbackGenerator *feedback = [[UIImpactFeedbackGenerator alloc]
                                            initWithStyle:UIImpactFeedbackStyleMedium];
     [feedback impactOccurred];
-    [[DottoPlusPlusPreferences sharedInstance] writeValue:@(self.type) forKey:kAppearanceStyle];
+    [[DottoPlusPlusPreferences sharedInstance] writeValue:@(self.type) forKey:DottoPlusPlusAppearanceStyleKey];
     [self.hostController updateForType:self.type];
 }
 

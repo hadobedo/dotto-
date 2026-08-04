@@ -1,14 +1,18 @@
 #import "DottoPlusPlusPreferences.h"
 
-static NSString *const DottoPrefsSuite = @"com.nicksworks.dottoplusplus.prefs";
-static NSString *const DottoReloadNotification = @"com.nicksworks.dottoplusplus/ReloadPrefs";
+NSString *const DottoPlusPlusPreferenceSuite = @"com.nicksworks.dottoplusplus.prefs";
+NSString *const DottoPlusPlusReloadNotification = @"com.nicksworks.dottoplusplus/ReloadPrefs";
+NSString *const DottoPlusPlusEnabledKey = @"kEnabled";
+NSString *const DottoPlusPlusAppearanceStyleKey = @"kAppearanceStyle";
+NSString *const DottoPlusPlusSelectedColorKey = @"kSelectedColor";
+NSString *const DottoPlusPlusAdaptiveColorKey = @"kAdaptiveColor";
+NSString *const DottoPlusPlusTransparencyKey = @"kTransparency";
+NSString *const DottoPlusPlusPastelColorKey = @"kUsePastelColor";
+NSString *const DottoPlusPlusPerceptualPastelColorKey = @"kPerceptualPastelColor";
 
-static NSString *const kEnabled = @"kEnabled";
-static NSString *const kAppearanceStyle = @"kAppearanceStyle";
-static NSString *const kSelectedColor = @"kSelectedColor";
-static NSString *const kAdaptiveColor = @"kAdaptiveColor";
-static NSString *const kTransparency = @"kTransparency";
-static NSString *const kUsePastelColor = @"kUsePastelColor";
+@interface DottoPlusPlusPreferences ()
+@property (nonatomic, copy) NSDictionary *preferences;
+@end
 
 @implementation DottoPlusPlusPreferences
 
@@ -29,20 +33,25 @@ static NSString *const kUsePastelColor = @"kUsePastelColor";
 }
 
 - (void)reloadPreferences {
-    NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:DottoPrefsSuite];
+    NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:DottoPlusPlusPreferenceSuite];
     self.preferences = [defaults dictionaryRepresentation];
 }
 
 - (void)writeValue:(id)value forKey:(NSString *)key {
-    NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:DottoPrefsSuite];
+    if (!key.length || !value) {
+        return;
+    }
+    NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:DottoPlusPlusPreferenceSuite];
     [defaults setObject:value forKey:key];
-    [defaults synchronize];
+    // Flush this suite through cfprefsd before notifying SpringBoard; unlike
+    // NSUserDefaults -synchronize, this is the supported CFPreferences API.
+    CFPreferencesAppSynchronize((CFStringRef)DottoPlusPlusPreferenceSuite);
+    [self reloadPreferences];
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
-                                         (CFStringRef)DottoReloadNotification,
+                                         (CFStringRef)DottoPlusPlusReloadNotification,
                                          NULL, NULL,
                                          kCFNotificationDeliverImmediately |
                                          kCFNotificationPostToAllSessions);
-    [self reloadPreferences];
 }
 
 - (id)_objectForKey:(NSString *)key {
@@ -50,32 +59,38 @@ static NSString *const kUsePastelColor = @"kUsePastelColor";
 }
 
 - (BOOL)tweakEnabled {
-    id value = [self _objectForKey:kEnabled];
+    id value = [self _objectForKey:DottoPlusPlusEnabledKey];
     return value ? [value boolValue] : YES;
 }
 
 - (BOOL)adaptiveColorEnabled {
-    id value = [self _objectForKey:kAdaptiveColor];
+    id value = [self _objectForKey:DottoPlusPlusAdaptiveColorKey];
     return value ? [value boolValue] : YES;
 }
 
 - (BOOL)pastelColorsEnabled {
-    id value = [self _objectForKey:kUsePastelColor];
+    id value = [self _objectForKey:DottoPlusPlusPastelColorKey];
+    return value ? [value boolValue] : NO;
+}
+
+- (BOOL)perceptualPastelColorsEnabled {
+    id value = [self _objectForKey:DottoPlusPlusPerceptualPastelColorKey];
     return value ? [value boolValue] : NO;
 }
 
 - (NSInteger)appearanceStyle {
-    id value = [self _objectForKey:kAppearanceStyle];
+    id value = [self _objectForKey:DottoPlusPlusAppearanceStyleKey];
     return value ? [value intValue] : 0;
 }
 
 - (CGFloat)transparency {
-    id value = [self _objectForKey:kTransparency];
-    return (value ? [value floatValue] : 100.0f) * 0.01f;
+    id value = [self _objectForKey:DottoPlusPlusTransparencyKey];
+    CGFloat percentage = value ? [value doubleValue] : 100.0;
+    return MIN(MAX(percentage * 0.01, 0.0), 1.0);
 }
 
 - (UIColor *)dottoSelectedColour {
-    id data = [self _objectForKey:kSelectedColor];
+    id data = [self _objectForKey:DottoPlusPlusSelectedColorKey];
     if (!data) {
         // Default: #E83553 (232/255, 53/255, 83/255) — the original's constants.
         return [UIColor colorWithRed:232.0 / 255.0 green:53.0 / 255.0 blue:83.0 / 255.0 alpha:1.0];
