@@ -118,7 +118,6 @@ jobs:
   publish-repository:
     needs: [prepare-release, build-release]
     runs-on: ubuntu-latest
-    environment: production
     env:
       RELEASE_VERSION: ${{ needs.prepare-release.outputs.version }}
     steps:
