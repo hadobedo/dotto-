@@ -4,7 +4,7 @@
 
 This audit covers the final 1.1.1 source tree against the tagged 1.1.0 baseline. It includes the runtime tweak, shared preference/colour library, PreferenceLoader bundle, package metadata, depiction assets, and release automation.
 
-- **Squashed candidate branch:** `development`, candidate commit `41610c6` (parent `v1.1.0`)
+- **Squashed candidate branch:** `development`, candidate commit `44c9b3a` before this audit-only refresh (parent `v1.1.0`)
 - **Baseline:** `v1.1.0` (`f21742f`)
 - **Release branch:** `main`, tagged `v1.1.1`
 - **Package version:** `1.1.1`
@@ -51,17 +51,17 @@ The temporary inverse `kFaithfulPastelColor` migration was also removed. Stable 
 
 ### Canonical CI
 
-- Development matrix CI: run `30909869132`, candidate `41610c6`, successful for rootless and RootHide.
-- Main release build/publish: run `30909881938`, release commit `076bee0`, successful for both schemes, stable-feed publication, and GitHub Release creation.
-- Main build matrix: run `30909882025`, successful for both schemes.
+- Development matrix CI: run `30910514984`, candidate `44c9b3a`, successful for rootless and RootHide.
+- Main release build/publish: run `30910517960`, successful for both schemes, stable-feed publication, and GitHub Release creation.
+- Main build matrix: run `30910518160`, successful for both schemes.
 - Release tag: `v1.1.1` points to the published main release commit; the GitHub Release is non-draft, non-prerelease, and latest.
 - Builds used the pinned macOS RootHide Theos toolchain with `FINALPACKAGE=1`.
 - Release package inspection passed `EXPECT_RELEASE=1 scripts/verify_package.sh` for both architectures.
 
 Recorded release artifact hashes:
 
-- Rootless `iphoneos-arm64`: `c2e4a489034a99d2f1260e3b05cb38e23d0742aa42a24c6e05a85e609a23e8fe`
-- RootHide `iphoneos-arm64e`: `eb298226ec3c3a9171080b2531c3fe3eacb5ed1c7cd1a03f42cbcb3331c1c897`
+- Rootless `iphoneos-arm64`: `3eae96646cef4893f2de7816b2d5db7618aad03e063c77f8741001ab145add64`
+- RootHide `iphoneos-arm64e`: `80b423c1a41716b5fc9a69a58069664a2e8cb07b6188856b8f30da5fad410d3b`
 
 The matching GitHub Release assets are:
 
@@ -73,7 +73,7 @@ Local Linux builds compile and package successfully but continue to emit arm64e 
 
 ### Feed and depiction evidence
 
-The stable package repository publication completed at feed commit `6bfb291f81ab7298050677b7db354084b3b46c03`. Its aggregate, rootless, and RootHide indexes each contain exactly one 1.1.1 stanza for the expected architecture, with matching filename, size, and SHA-256 hash.
+The stable package repository publication completed at feed commit `9fae3e3304cf05897fdd82f8657796984d87f2df`. Its aggregate, rootless, and RootHide indexes each contain exactly one 1.1.1 stanza for the expected architecture, with matching filename, size, and SHA-256 hash.
 
 The following stable assets were fetched successfully over HTTPS:
 
