@@ -1,4 +1,4 @@
-// dotto+ — iOS 17 rebuild.
+// dotto+ — iOS 15–18 rebuild (iOS 18: the badge background may be any UIView).
 // Faithful port of dotto.dylib 1.0.6 (see docs/ANALYSIS.md for the full decompilation).
 // Changes for iOS 17:
 //  - _frameForAccessoryView: hook removed (selector gone from SBIconView)
@@ -228,7 +228,7 @@ static char const kDottoPlusPlusBadgeOverlayKey;
 - (CGSize)badgeSize;
 - (void)configureForIcon:(id)icon infoProvider:(id)provider;
 - (UIColor *)dottoPlusPlusBadgeColour;
-- (void)dottoPlusPlusCaptureStateIfNeededWithBackgroundView:(UIImageView *)backgroundView;
+- (void)dottoPlusPlusCaptureStateIfNeededWithBackgroundView:(UIView *)backgroundView;
 - (void)dottoPlusPlusRestoreState;
 - (void)dottoPlusPlusApply;
 - (void)dottoPlusPlusRestoreAndReconfigureStock;
@@ -514,12 +514,13 @@ static void DottoPlusPlusUpdateBadges(CFNotificationCenterRef center __unused,
     self.dottoPlusPlusBadgeOverlay = nil;
 }
 
-- (void)dottoPlusPlusCaptureStateIfNeededWithBackgroundView:(UIImageView *)backgroundView {
+- (void)dottoPlusPlusCaptureStateIfNeededWithBackgroundView:(UIView *)backgroundView {
     if (self.dottoPlusPlusBadgeState || !backgroundView) {
         return;
     }
     DottoPlusPlusBadgeState *state = [DottoPlusPlusBadgeState new];
-    state.backgroundImage = backgroundView.image;
+    // iOS 15-17: an image view (SBDarkeningImageView). iOS 18: a plain or material view holding the count.
+    state.backgroundImage = [backgroundView isKindOfClass:[UIImageView class]] ? ((UIImageView *)backgroundView).image : nil;
     state.backgroundTintColor = DottoPlusPlusCopyColor(backgroundView.tintColor);
     state.backgroundColor = DottoPlusPlusCopyColor(backgroundView.backgroundColor);
     state.backgroundLayerColor = DottoPlusPlusColorFromLayerColor(backgroundView.layer.backgroundColor);
@@ -550,9 +551,11 @@ static void DottoPlusPlusUpdateBadges(CFNotificationCenterRef center __unused,
     if (!state) {
         return;
     }
-    UIImageView *backgroundView = (UIImageView *)DottoPlusPlusValueForKeySafely(self, @"backgroundView");
-    if ([backgroundView isKindOfClass:[UIImageView class]]) {
-        backgroundView.image = state.backgroundImage;
+    UIView *backgroundView = DottoPlusPlusValueForKeySafely(self, @"backgroundView");
+    if ([backgroundView isKindOfClass:[UIView class]]) {
+        if ([backgroundView isKindOfClass:[UIImageView class]]) {
+            ((UIImageView *)backgroundView).image = state.backgroundImage;
+        }
         backgroundView.tintColor = state.backgroundTintColor;
         backgroundView.backgroundColor = state.backgroundColor;
         backgroundView.layer.backgroundColor = state.backgroundLayerColor.CGColor;
@@ -694,10 +697,11 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon) {
 }
 
 - (void)dottoPlusPlusApply {
-    UIImageView *backgroundView = (UIImageView *)DottoPlusPlusValueForKeySafely(self,
-                                                                                 @"backgroundView");
+    // iOS 18 made the badge background a plain/material UIView (with the count inside it); earlier versions
+    // use an image view. dotto++ only hides it and draws its own overlay, so any view will do.
+    UIView *backgroundView = DottoPlusPlusValueForKeySafely(self, @"backgroundView");
     UIView *textView = DottoPlusPlusValueForKeySafely(self, @"textView");
-    if (![backgroundView isKindOfClass:[UIImageView class]] ||
+    if (![backgroundView isKindOfClass:[UIView class]] ||
         ![textView isKindOfClass:[UIView class]]) {
         return;
     }
