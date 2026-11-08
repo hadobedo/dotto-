@@ -66,7 +66,7 @@ def render_sileo(version: str, sections: list[tuple[str, list[str]]], base_url: 
         {
             "class": "DepictionMarkdownView",
             "markdown": (
-                "Minimalistic notification dots, rebuilt for iOS 15–17"
+                "Minimalistic notification dots, rebuilt for iOS 15 and above"
             ),
             "useSpacing": True,
         },
@@ -76,7 +76,7 @@ def render_sileo(version: str, sections: list[tuple[str, list[str]]], base_url: 
         {
             "class": "DepictionTableTextView",
             "title": "Compatibility",
-            "text": "iOS 15–17",
+            "text": "iOS 15 and above",
         },
         {
             "class": "DepictionTableTextView",
@@ -184,7 +184,7 @@ def render_html(version: str, sections: list[tuple[str, list[str]]], base_url: s
   <main>
     <header class="package">
       <img class="icon" src="{html.escape(base_url, quote=True)}/assets/dottoplusplus.png" alt="dotto++ icon">
-      <div><h1>dotto++</h1><div class="version">Version {html.escape(version)}</div><p class="sub">Nick's Works · iOS 15–17</p></div>
+      <div><h1>dotto++</h1><div class="version">Version {html.escape(version)}</div><p class="sub">Nick's Works · iOS 15+</p></div>
     </header>
     <section class="card">
       <h2>About</h2>
