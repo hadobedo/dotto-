@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
-# Publish the two debug .debs produced by the development CI matrix to
-# hadobedo/repo's development feed (hadobedo.github.io/repo/dev).
+# Publish debug .debs to hadobedo/repo's development feed
+# (hadobedo.github.io/repo/dev), which acts as the staging channel: install from
+# there to test on a device before anything reaches the stable feeds.
+#
+# Any package may be staged. When EXPECTED_VERSION is set it is asserted against
+# the dotto++ package only, so the CI job that builds dotto++ still verifies the
+# version it just produced.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PAGES_REPO="${PAGES_REPO:-hadobedo/repo}"
+# Overridable so the script can be exercised against a local scratch repository.
+PAGES_REPO_URL="${PAGES_REPO_URL:-git@github.com:${PAGES_REPO}.git}"
 BRANCH="${PAGES_REPO_BRANCH:-main}"
 read_control_version() {
     local control_file=$1
@@ -21,7 +28,7 @@ read_control_version() {
 
 EXPECTED_VERSION="${EXPECTED_VERSION:-$(read_control_version "$SCRIPT_DIR/../control")}"
 PACKAGE_NAME="com.nicksworks.dottoplusplus"
-EXPECTED_ARCHES=(iphoneos-arm64 iphoneos-arm64e)
+VALID_ARCHES=(iphoneos-arm64 iphoneos-arm64e)
 : "${DEBS:?DEBS (space-separated .deb paths) is required}"
 
 if [[ -z "${REPO_DEPLOY_KEY:-}" ]]; then
@@ -38,6 +45,10 @@ if [[ ${#DEBS_ABS[@]} -eq 0 ]]; then
     exit 1
 fi
 
+# Validates a set of debs: every architecture must be one we serve, and no two
+# debs may claim the same package+architecture. When EXPECTED_VERSION is set, the
+# dotto++ package must match it; other packages are staged at whatever version
+# they carry.
 validate_debs() {
     local expected_version=$1
     shift
@@ -47,33 +58,27 @@ validate_debs() {
         package=$(dpkg-deb -f "$deb" Package)
         version=$(dpkg-deb -f "$deb" Version)
         architecture=$(dpkg-deb -f "$deb" Architecture)
-        if [[ $package != "$PACKAGE_NAME" ]]; then
-            printf 'unexpected package %s in %s\n' "$package" "$deb" >&2
+        if [[ -z $package || -z $version || -z $architecture ]]; then
+            printf 'incomplete control fields in %s\n' "$deb" >&2
             return 1
         fi
-        if [[ $version != "$expected_version" ]]; then
-            printf 'expected Version %s, found %s in %s\n' "$expected_version" "$version" "$deb" >&2
-            return 1
-        fi
-        case "$architecture" in
-            iphoneos-arm64|iphoneos-arm64e) ;;
+        case " ${VALID_ARCHES[*]} " in
+            *" $architecture "*) ;;
             *)
                 printf 'unexpected architecture %s in %s\n' "$architecture" "$deb" >&2
                 return 1
                 ;;
         esac
-        if [[ -n ${seen[$architecture]:-} ]]; then
-            printf 'duplicate candidate architecture %s\n' "$architecture" >&2
+        if [[ -n $expected_version && $package == "$PACKAGE_NAME" && $version != "$expected_version" ]]; then
+            printf 'expected %s Version %s, found %s in %s\n' \
+                "$package" "$expected_version" "$version" "$deb" >&2
             return 1
         fi
-        seen[$architecture]=1
-    done
-    local architecture
-    for architecture in "${EXPECTED_ARCHES[@]}"; do
-        if [[ -z ${seen[$architecture]:-} ]]; then
-            printf 'candidate is missing architecture %s\n' "$architecture" >&2
+        if [[ -n ${seen["$package:$architecture"]:-} ]]; then
+            printf 'duplicate candidate %s %s\n' "$package" "$architecture" >&2
             return 1
         fi
+        seen["$package:$architecture"]=1
     done
 }
 
@@ -87,7 +92,7 @@ ssh-keyscan -H github.com >> "$HOME/.ssh/known_hosts" 2>/dev/null
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-git clone --depth 1 -b "$BRANCH" "git@github.com:${PAGES_REPO}.git" "$WORK/repo"
+git clone --depth 1 -b "$BRANCH" "$PAGES_REPO_URL" "$WORK/repo"
 cd "$WORK/repo"
 
 mkdir -p dev/debs
@@ -121,11 +126,13 @@ PY
 
 shopt -s nullglob
 published_debs=(dev/debs/*.deb)
-validate_debs "$EXPECTED_VERSION" "${published_debs[@]}"
+# Structural checks only: the feed may legitimately hold other versions and
+# packages. The strict version assertion above already covered what we staged.
+validate_debs "" "${published_debs[@]}"
 
 python3 "$SCRIPT_DIR/make_repo_metadata.py" dev development dev
 cat > dev/index.html <<'EOF'
-<html><head><meta http-equiv="refresh" content="0; url=Packages"></head><body>dotto++ development feed</body></html>
+<html><head><meta http-equiv="refresh" content="0; url=Packages"></head><body>Nicks Works development feed</body></html>
 EOF
 mkdir -p assets depictions dev/assets dev/depictions
 for asset_dir in assets dev/assets; do
@@ -158,18 +165,24 @@ for required_page in \
     fi
 done
 PUBLISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-cat > dev/BUILD <<EOF
-Package: $PACKAGE_NAME
-Version: $EXPECTED_VERSION
-Source-Commit: ${GITHUB_SHA:-local}
-Published-At: $PUBLISHED_AT
-EOF
+{
+    printf 'Source-Commit: %s\n' "${GITHUB_SHA:-local}"
+    printf 'Published-At: %s\n' "$PUBLISHED_AT"
+    for deb in "${published_debs[@]}"; do
+        printf 'Package: %s %s %s\n' \
+            "$(dpkg-deb -f "$deb" Package)" \
+            "$(dpkg-deb -f "$deb" Version)" \
+            "$(dpkg-deb -f "$deb" Architecture)"
+    done
+} > dev/BUILD
 
+# Assert every package+architecture we just staged is present in the generated
+# index, at the version on disk.
 assert_packages_stanza() {
-    local architecture=$1
-    awk -v expected_package="$PACKAGE_NAME" \
-        -v expected_version="$EXPECTED_VERSION" \
-        -v expected_architecture="$architecture" '
+    local expected_package=$1 expected_version=$2 expected_architecture=$3
+    awk -v expected_package="$expected_package" \
+        -v expected_version="$expected_version" \
+        -v expected_architecture="$expected_architecture" '
         function finish() {
             if (package == expected_package && version == expected_version && architecture == expected_architecture) {
                 found = 1
@@ -184,9 +197,13 @@ assert_packages_stanza() {
     ' dev/Packages
 }
 
-for architecture in "${EXPECTED_ARCHES[@]}"; do
-    assert_packages_stanza "$architecture" || {
-        printf 'generated dev/Packages is missing %s %s\n' "$PACKAGE_NAME" "$architecture" >&2
+for deb in "${published_debs[@]}"; do
+    package=$(dpkg-deb -f "$deb" Package)
+    version=$(dpkg-deb -f "$deb" Version)
+    architecture=$(dpkg-deb -f "$deb" Architecture)
+    assert_packages_stanza "$package" "$version" "$architecture" || {
+        printf 'generated dev/Packages is missing %s %s %s\n' \
+            "$package" "$version" "$architecture" >&2
         exit 1
     }
 done
@@ -195,7 +212,7 @@ done
 # package version was already present in the feed.
 git add -A
 git -c user.name="dotto++ CI" -c user.email="ci@hadobedo.invalid" \
-    commit -m "dev: publish dotto++ $EXPECTED_VERSION"
+    commit -m "dev: publish ${#published_debs[@]} package(s)"
 git push origin "$BRANCH"
 
 published_commit=$(git rev-parse HEAD)
