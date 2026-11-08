@@ -1,6 +1,6 @@
 Package: com.nicksworks.dottoplusplus
 Name: dotto++
-Version: 1.1.3
+Version: 1.1.4
 Architecture: iphoneos-arm64
 Description: Rootless adaptation of dotto+ originally written by Mirac & ConorTheDev
 Maintainer: Nick's Works <hadobedo@gmail.com>

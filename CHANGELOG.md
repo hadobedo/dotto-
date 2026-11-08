@@ -1,13 +1,16 @@
 # Changelog
 
-## 1.1.3
+## 1.1.4
 
-- Removed the iOS 18 firmware cap; dotto++ now installs on iOS 15 and above.
 - iOS 18 support: `SBIconBadgeView`'s `_backgroundView` is a plain/material
   `UIView` there rather than an `SBDarkeningImageView`. `dottoPlusPlusApply`
   rejected anything that was not an image view, so nothing was drawn on 18.
   Any `UIView` is now accepted, and capture/restore only touch `.image` when
   the background really is an image view. (Based on PR #1 by Jond-ie.)
+
+## 1.1.3
+
+- Removed the iOS 18 firmware cap; dotto++ now installs on iOS 15 and above.
 - Badge colour results are cached by icon artwork identity instead of being
   invalidated on every icon reconfiguration, so install-progress ticks no
   longer trigger a full icon re-render and average on the main thread.
