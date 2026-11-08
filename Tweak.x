@@ -20,7 +20,7 @@ static DottoPlusPlusPreferences *dppPrefs;
 // Adaptive colour cache: icon uniqueIdentifier -> colour. Computing the
 // dominant colour scans pixels, so cache per icon and only recompute on
 // preference reloads (badge/icon colours are stable within a session).
-static NSMutableDictionary<NSString *, UIColor *> *dppColourCache;
+static NSMutableDictionary<NSString *, id> *dppColourCache;
 // Folder colours depend on the current set of badged apps. Cache only by a
 // signature of that set; preference/icon reconfiguration clears this cache.
 static NSMutableDictionary<NSString *, NSDictionary<NSString *, id> *> *dppFolderColourCache;
@@ -606,14 +606,42 @@ static NSArray<SBIcon *> *DottoPlusPlusBadgedFolderApps(SBFolderIcon *folderIcon
     return apps.copy;
 }
 
-static NSString *DottoPlusPlusFolderColourSignature(NSArray<SBIcon *> *apps) {
+// Colours are keyed by icon identity *and* the backing CGImage, so a cached
+// colour stays valid across badge reconfiguration (install progress, badge
+// count changes) and is only recomputed when the icon artwork changes.
+static NSString *DottoPlusPlusImageColourKey(NSString *iconID, UIImage *image) {
+    return [NSString stringWithFormat:@"%@|%p", iconID ?: @"", (void *)image.CGImage];
+}
+
+static UIColor *DottoPlusPlusCachedAverageColour(NSString *iconID, UIImage *image) {
+    if (!image.CGImage) {
+        return nil;
+    }
+    NSString *key = DottoPlusPlusImageColourKey(iconID, image);
+    id cached = dppColourCache[key];
+    if (cached) {
+        return cached == [NSNull null] ? nil : cached;
+    }
+    UIColor *colour = [image dottoAverageColor];
+    if (dppColourCache.count > 512) {
+        [dppColourCache removeAllObjects];
+    }
+    dppColourCache[key] = colour ?: (id)[NSNull null];
+    return colour;
+}
+
+static NSString *DottoPlusPlusFolderColourSignature(NSArray<SBIcon *> *apps,
+                                                     NSArray<UIImage *> *images) {
     NSMutableString *signature = [NSMutableString stringWithCapacity:apps.count * 24];
-    for (SBIcon *icon in apps) {
+    for (NSUInteger idx = 0; idx < apps.count; idx++) {
+        SBIcon *icon = apps[idx];
         NSString *identifier = icon.uniqueIdentifier;
         if (!identifier.length) {
             identifier = [NSString stringWithFormat:@"ptr:%p", (void *)icon];
         }
-        [signature appendFormat:@"%@:%lld;", identifier, icon.badgeValue];
+        id image = images[idx];
+        [signature appendFormat:@"%@:%lld:%p;", identifier, icon.badgeValue,
+                                image == [NSNull null] ? NULL : (void *)((UIImage *)image).CGImage];
     }
     return signature.copy;
 }
@@ -624,8 +652,18 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon) {
         return nil;
     }
 
+    struct SBIconImageInfo info;
+    info.size = CGSizeMake(60, 60);
+    info.scale = 3.0;
+    info.continuousCornerRadius = 20.45;
+    NSMutableArray *images = [NSMutableArray arrayWithCapacity:apps.count];
+    for (SBIcon *icon in apps) {
+        UIImage *image = [icon iconImageWithInfo:info];
+        [images addObject:image ?: (id)[NSNull null]];
+    }
+
     NSString *folderID = folderIcon.uniqueIdentifier;
-    NSString *signature = DottoPlusPlusFolderColourSignature(apps);
+    NSString *signature = DottoPlusPlusFolderColourSignature(apps, images);
     NSDictionary<NSString *, id> *cached = folderID.length
         ? dppFolderColourCache[folderID]
         : nil;
@@ -634,15 +672,14 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon) {
         return cachedColour == [NSNull null] ? nil : cachedColour;
     }
 
-    struct SBIconImageInfo info;
-    info.size = CGSizeMake(60, 60);
-    info.scale = 3.0;
-    info.continuousCornerRadius = 20.45;
     CGFloat red = 0, green = 0, blue = 0;
     NSUInteger count = 0;
-    for (SBIcon *icon in apps) {
-        UIImage *image = [icon iconImageWithInfo:info];
-        UIColor *colour = [image dottoAverageColor];
+    for (NSUInteger i = 0; i < apps.count; i++) {
+        id image = images[i];
+        if (image == [NSNull null]) {
+            continue;
+        }
+        UIColor *colour = DottoPlusPlusCachedAverageColour(apps[i].uniqueIdentifier, image);
         CGFloat r, g, b, a;
         if ([colour getRed:&r green:&g blue:&b alpha:&a]) {
             red += r;
@@ -667,10 +704,6 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon) {
 - (UIColor *)dottoPlusPlusBadgeColour {
     BOOL isFolder = [self.dottoPlusPlusApplicationIcon isKindOfClass:[SBFolderIcon class]];
     NSString *iconID = self.dottoPlusPlusApplicationIcon.uniqueIdentifier;
-    UIColor *cached = (!isFolder && iconID) ? dppColourCache[iconID] : nil;
-    if (cached) {
-        return cached;
-    }
     UIColor *colour = nil;
     if (isFolder) {
         colour = DottoPlusPlusAverageFolderColour((SBFolderIcon *)self.dottoPlusPlusApplicationIcon);
@@ -680,15 +713,12 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon) {
         if ([imageView respondsToSelector:@selector(contentsImage)]) {
             UIImage *contentsImage = [(SBIconImageView *)imageView contentsImage];
             if (contentsImage) {
-                colour = [contentsImage dottoAverageColor];
+                colour = DottoPlusPlusCachedAverageColour(iconID, contentsImage);
             }
         }
     }
     if (!colour) {
         colour = [dppPrefs dottoSelectedColour];
-    }
-    if (!isFolder && iconID) {
-        dppColourCache[iconID] = colour;
     }
     return colour;
 }
@@ -892,21 +922,13 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon) {
 }
 
 - (void)configureForIcon:(id)icon infoProvider:(id)provider {
-    NSString *oldIconID = self.dottoPlusPlusApplicationIcon.uniqueIdentifier;
-    if (oldIconID) {
-        [dppColourCache removeObjectForKey:oldIconID];
-    }
-    // A child icon reconfiguration can change the folder's dominant colour
-    // without changing its badge membership signature.
-    [dppFolderColourCache removeAllObjects];
+    // Colour caches are keyed by icon artwork identity, so they are not
+    // invalidated here. Clearing them on every configure turned each install
+    // progress tick into a full icon re-render + average on the main thread.
     [self dottoPlusPlusRestoreState];
     %orig;
     self.dottoPlusPlusApplicationIcon = icon;
     self.dottoPlusPlusInfoProvider = provider;
-    NSString *newIconID = [icon respondsToSelector:@selector(uniqueIdentifier)] ? [icon uniqueIdentifier] : nil;
-    if (newIconID) {
-        [dppColourCache removeObjectForKey:newIconID];
-    }
     [self dottoPlusPlusApply];
     DottoPlusPlusRefreshStockBadgeLayout(self);
     DottoPlusPlusInvalidateBadgeHierarchy(self, NO);
@@ -952,7 +974,10 @@ static UIColor *DottoPlusPlusAverageFolderColour(SBFolderIcon *folderIcon) {
         [dppPrefs reloadPreferences];
         dispatch_async(dispatch_get_main_queue(), ^{
             %init;
-            if (@available(iOS 17.0, *)) {
+            // Not @available: the clang-22 RootHide toolchain doesn't link
+            // compiler-rt, so ___isPlatformVersionAtLeast is unresolvable at load.
+            if ([NSProcessInfo.processInfo isOperatingSystemAtLeastVersion:
+                    (NSOperatingSystemVersion){17, 0, 0}]) {
                 %init(DottoPlusPlusIOS17);
             }
         });

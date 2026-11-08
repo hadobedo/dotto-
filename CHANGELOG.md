@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.3
+
+- Removed the iOS 18 firmware cap; dotto++ now installs on iOS 15 and above.
+- Badge colour results are cached by icon artwork identity instead of being
+  invalidated on every icon reconfiguration, so install-progress ticks no
+  longer trigger a full icon re-render and average on the main thread.
+- Folder colours are keyed by the backing `CGImage`, keeping cached colours
+  valid across badge-count changes.
+- Replaced the `@available(iOS 17.0, *)` check with a runtime
+  `isOperatingSystemAtLeastVersion:` test; the clang-22 RootHide toolchain does
+  not link compiler-rt, leaving `___isPlatformVersionAtLeast` unresolved at load.
+
 ## 1.1.1
 
 - The dotto++ toggle and all settings should now work without a respring!

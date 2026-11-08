@@ -296,7 +296,7 @@ jobs:
               f"{base}/depictions/com.nicksworks.dottoplusplus.json", timeout=30
           ).read().decode()
           assert '"tabname": "Changelog"' in depiction
-          assert '1.1.1' in depiction
+          assert version in depiction
           PY
 
   create-github-release:

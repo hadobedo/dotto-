@@ -68,7 +68,7 @@ grep -Fx 'Package: com.nicksworks.dottoplusplus' "$package_control" \
 EXPECTED_ARCH="${EXPECTED_ARCH:-iphoneos-arm64e}"
 grep -Fx "Architecture: $EXPECTED_ARCH" "$package_control" \
     || { echo "Architecture mismatch (expected $EXPECTED_ARCH):" >&2; grep '^Architecture:' "$package_control" >&2; exit 1; }
-grep -Fx 'Depends: firmware (>= 15.0), firmware (<< 18.0), ellekit, preferenceloader' "$package_control" \
+grep -Fx 'Depends: firmware (>= 15.0), ellekit, preferenceloader' "$package_control" \
     || { echo "Depends mismatch:" >&2; grep '^Depends:' "$package_control" >&2; exit 1; }
 grep -Fx 'Homepage: https://github.com/hadobedo/dotto-' "$package_control" \
     || { echo "Homepage mismatch:" >&2; grep '^Homepage:' "$package_control" >&2; exit 1; }

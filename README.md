@@ -1,7 +1,7 @@
 # dotto++
 
 Rootless adaptation/rewrite of **dotto+**, originally written by ConorTheDev & Mirac.
-CI-built for iOS 15–17 using rootless/roothide jailbreak toolchains. Runtime testing and release status are tracked in [AUDIT.md](docs/AUDIT.md).
+CI-built for iOS 15 and above using rootless/roothide jailbreak toolchains. Runtime testing and release status are tracked in [AUDIT.md](docs/AUDIT.md).
 
 ## Changes/Fixes
 - removed `libcolorpicker` dependency; uses the native

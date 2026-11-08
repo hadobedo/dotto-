@@ -1,6 +1,6 @@
 Package: com.nicksworks.dottoplusplus
 Name: dotto++
-Version: 1.1.1
+Version: 1.1.3
 Architecture: iphoneos-arm64
 Description: Rootless adaptation of dotto+ originally written by Mirac & ConorTheDev
 Maintainer: Nick's Works <hadobedo@gmail.com>
@@ -10,6 +10,6 @@ Icon: https://hadobedo.github.io/repo/assets/dottoplusplus.png
 SileoDepiction: https://hadobedo.github.io/repo/depictions/com.nicksworks.dottoplusplus.json
 Depiction: https://hadobedo.github.io/repo/depictions/com.nicksworks.dottoplusplus.html
 Section: Tweaks
-Depends: firmware (>= 15.0), firmware (<< 18.0), ellekit, preferenceloader
+Depends: firmware (>= 15.0), ellekit, preferenceloader
 Replaces: me.conorthedev.dotto+
 Conflicts: me.conorthedev.dotto+
