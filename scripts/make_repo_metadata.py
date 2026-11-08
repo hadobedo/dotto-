@@ -75,6 +75,12 @@ def main():
         with open(os.path.join(repo_dir, name), "wb") as f:
             f.write(data)
 
+    # Drop any other Packages.* variant so a stale index can never linger and be
+    # served alongside a freshly generated Packages.
+    for name in os.listdir(repo_dir):
+        if name.startswith("Packages.") and name not in variants:
+            os.remove(os.path.join(repo_dir, name))
+
     entries = ["Packages"] + [n for n in ("Packages.gz", "Packages.bz2", "Packages.xz") if n in variants]
     lines = [
         "Origin: Nicks Works",

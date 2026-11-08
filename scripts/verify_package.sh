@@ -63,21 +63,39 @@ if [[ $package_version != "$repository_version" ]]; then
     exit 1
 fi
 
-grep -Fx 'Package: com.nicksworks.dottoplusplus' "$package_control" \
-    || { echo "Package mismatch:" >&2; grep '^Package:' "$package_control" >&2; exit 1; }
+# Every field below is taken from the repository control file rather than
+# duplicated here, so bumping a dependency or URL needs exactly one edit.
+expected_field() {
+    local field=$1
+    local value
+    value=$(awk -v want="$field:" '$1 == want { sub(/^[^:]*: /, ""); print }' control)
+    if [[ -z $value ]]; then
+        printf 'control has no %s field\n' "$field" >&2
+        return 1
+    fi
+    printf '%s\n' "$value"
+}
+
+assert_field() {
+    local field=$1
+    local expected
+    expected=$(expected_field "$field") || return 1
+    if ! grep -Fx "$field: $expected" "$package_control" >/dev/null; then
+        printf '%s mismatch (expected: %s)\n' "$field" "$expected" >&2
+        grep "^$field:" "$package_control" >&2
+        return 1
+    fi
+}
+
+assert_field Package
 EXPECTED_ARCH="${EXPECTED_ARCH:-iphoneos-arm64e}"
 grep -Fx "Architecture: $EXPECTED_ARCH" "$package_control" \
     || { echo "Architecture mismatch (expected $EXPECTED_ARCH):" >&2; grep '^Architecture:' "$package_control" >&2; exit 1; }
-grep -Fx 'Depends: firmware (>= 15.0), ellekit, preferenceloader' "$package_control" \
-    || { echo "Depends mismatch:" >&2; grep '^Depends:' "$package_control" >&2; exit 1; }
-grep -Fx 'Homepage: https://github.com/hadobedo/dotto-' "$package_control" \
-    || { echo "Homepage mismatch:" >&2; grep '^Homepage:' "$package_control" >&2; exit 1; }
-grep -Fx 'Icon: https://hadobedo.github.io/repo/assets/dottoplusplus.png' "$package_control" \
-    || { echo "Icon mismatch:" >&2; grep '^Icon:' "$package_control" >&2; exit 1; }
-grep -Fx 'SileoDepiction: https://hadobedo.github.io/repo/depictions/com.nicksworks.dottoplusplus.json' "$package_control" \
-    || { echo "SileoDepiction mismatch:" >&2; grep '^SileoDepiction:' "$package_control" >&2; exit 1; }
-grep -Fx 'Depiction: https://hadobedo.github.io/repo/depictions/com.nicksworks.dottoplusplus.html' "$package_control" \
-    || { echo "Depiction mismatch:" >&2; grep '^Depiction:' "$package_control" >&2; exit 1; }
+assert_field Depends
+assert_field Homepage
+assert_field Icon
+assert_field SileoDepiction
+assert_field Depiction
 
 data_archive=$(find "$tmpdir" -maxdepth 1 -name 'data.tar.*' -print -quit)
 if [[ -z $data_archive ]]; then

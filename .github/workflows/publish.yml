@@ -32,18 +32,27 @@ jobs:
           test -n "$version"
           tag="v$version"
           git fetch origin --tags --force
+          # A push to main that does not bump control (docs, CI, refactors) must
+          # not attempt a release: the tag for the current version already
+          # exists, so that version is already published. Report it and let the
+          # downstream jobs skip instead of failing the workflow.
+          should_release=true
           if git show-ref --verify --quiet "refs/tags/$tag"; then
             tagged_commit=$(git rev-list -n 1 "refs/tags/$tag")
-            test "$tagged_commit" = "$GITHUB_SHA" || {
-              echo "$tag already points to $tagged_commit, not $GITHUB_SHA" >&2
-              exit 1
-            }
+            if [ "$tagged_commit" = "$GITHUB_SHA" ]; then
+              echo "$tag already points at this commit; re-running release idempotently"
+            else
+              echo "$tag already published from $tagged_commit; nothing to release for $version"
+              should_release=false
+            fi
           fi
           printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
           printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
+          printf 'should_release=%s\n' "$should_release" >> "$GITHUB_OUTPUT"
 
   build-release:
     needs: prepare-release
+    if: needs.prepare-release.outputs.should_release == 'true'
     runs-on: macos-15
     strategy:
       fail-fast: false
@@ -117,6 +126,7 @@ jobs:
 
   publish-repository:
     needs: [prepare-release, build-release]
+    if: needs.prepare-release.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     env:
       RELEASE_VERSION: ${{ needs.prepare-release.outputs.version }}
@@ -152,7 +162,7 @@ jobs:
         run: git clone git@github.com:hadobedo/repo.git feed
 
       - name: Install repository tools
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y dpkg-dev
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y dpkg-dev bzip2 xz-utils
 
       - name: Update package indexes
         shell: bash
@@ -177,17 +187,26 @@ jobs:
             cp "$artifact/SHA256SUMS" "feed/$scheme/SHA256SUMS"
           done
 
+          # Single index generator for every feed. Writes Packages plus all
+          # three compressed variants, deletes any other Packages.* variant so a
+          # stale index can never survive a publish (this is how a stale
+          # Packages.xz previously ended up in the stable feed), and lists every
+          # variant in Release with all three hash types.
           write_release() {
             local directory=$1
             local architectures=$2
             local codename=$3
-            local package_file=Packages
-            local compressed_file=Packages.gz
 
             (
               cd "$directory"
               dpkg-scanpackages -m debs /dev/null > Packages
               gzip -9c Packages > Packages.gz
+              bzip2 -9c Packages > Packages.bz2
+              xz -9c Packages > Packages.xz
+              find . -maxdepth 1 -name 'Packages.*' \
+                ! -name 'Packages.gz' ! -name 'Packages.bz2' ! -name 'Packages.xz' -delete
+
+              local variants='Packages Packages.gz Packages.bz2 Packages.xz'
               {
                 printf 'Origin: Nicks Works\n'
                 printf 'Label: Nicks Works\n'
@@ -196,14 +215,19 @@ jobs:
                 printf 'Architectures: %s\n' "$architectures"
                 printf 'Components: main\n'
                 printf 'Description: dotto++ package feed\n'
-                printf 'MD5Sum:\n'
-                while read -r hash file; do
-                  printf ' %s %s %s\n' "$hash" "$(stat -c '%s' "$file")" "$file"
-                done < <(md5sum "$package_file" "$compressed_file")
-                printf 'SHA256:\n'
-                while read -r hash file; do
-                  printf ' %s %s %s\n' "$hash" "$(stat -c '%s' "$file")" "$file"
-                done < <(sha256sum "$package_file" "$compressed_file")
+                printf 'Date: %s\n' "$(date -Ru)"
+                local algo cmd
+                for algo in MD5Sum SHA1 SHA256; do
+                  case $algo in
+                    MD5Sum) cmd=md5sum ;;
+                    SHA1) cmd=sha1sum ;;
+                    SHA256) cmd=sha256sum ;;
+                  esac
+                  printf '%s:\n' "$algo"
+                  while read -r hash file; do
+                    printf ' %s %s %s\n' "$hash" "$(stat -c '%s' "$file")" "$file"
+                  done < <($cmd $variants)
+                done
               } > Release
             )
           }
@@ -297,6 +321,29 @@ jobs:
           ).read().decode()
           assert '"tabname": "Changelog"' in depiction
           assert version in depiction
+
+          # Every feed must advertise the same index variants, and each one must
+          # decompress to the Packages it claims to describe.
+          import gzip, lzma
+          for index_path, release_path in (
+              ("Packages", "Release"),
+              ("rootless/Packages", "rootless/Release"),
+              ("roothide/Packages", "roothide/Release"),
+          ):
+              plain = urllib.request.urlopen(f"{base}/{index_path}", timeout=30).read()
+              release = urllib.request.urlopen(f"{base}/{release_path}", timeout=30).read().decode()
+              for variant in ("Packages", "Packages.gz", "Packages.bz2", "Packages.xz"):
+                  assert variant in release, (release_path, variant)
+              directory = index_path.rsplit("/", 1)[0] if "/" in index_path else ""
+              prefix = f"{directory}/" if directory else ""
+              gz = urllib.request.urlopen(f"{base}/{prefix}Packages.gz", timeout=30).read()
+              assert gzip.decompress(gz) == plain, (index_path, "gz")
+              try:
+                  xz = urllib.request.urlopen(f"{base}/{prefix}Packages.xz", timeout=30).read()
+              except Exception:
+                  pass
+              else:
+                  assert lzma.decompress(xz) == plain, (index_path, "xz")
           PY
 
   create-github-release:
@@ -304,6 +351,7 @@ jobs:
     # Release only after the production-gated stable feed has published and
     # its artifact-specific verification has passed.
     needs: [prepare-release, publish-repository]
+    if: needs.prepare-release.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     env:
       RELEASE_VERSION: ${{ needs.prepare-release.outputs.version }}
